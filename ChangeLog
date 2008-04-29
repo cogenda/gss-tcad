@@ -1,3 +1,6 @@
+2008-04-29 Shen Chen <shenchen@nus.edu.sg>
+  Improved autoconf setup for building dynamic library in Darwin/Mac 
+
 2008-03-10 Gong Ding <gdiso@ustc.edu>
   * src/solver/ddm2e/semiequ2.cc:        Add Fermi statistics support  
   * src/solver/mix2/semiequ2mix.cc:      Add Fermi statistics support  
