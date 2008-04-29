@@ -9,7 +9,7 @@ all:  libElec.so
 
 OBJS = 	Elec_basic.o Elec_thermal.o Elec_Optical.o
 libElec.so:  $(OBJS)  
-	$(CXX)  -shared -o libElec.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libElec.so $(OBJS) -lm
 
 Elec_basic.o    : Elec_basic.cc
 Elec_thermal.o  : Elec_thermal.cc

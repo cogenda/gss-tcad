@@ -11,7 +11,7 @@ OBJS = InP_basic.o InP_band.o InP_thermal.o InP_gen.o InP_Optical.o \
        ../adolc_init.o
 
 libInP.so:$(OBJS)
-	$(CXX) -shared -o libInP.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libInP.so $(OBJS) -lm
 
 InP_band.o    : InP_band.cc
 InP_basic.o   : InP_basic.cc

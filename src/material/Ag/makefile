@@ -9,7 +9,7 @@ all:  libAg.so
 
 OBJS = 	Ag_basic.o Ag_thermal.o Ag_Optical.o
 libAg.so:  $(OBJS)  
-	$(CXX)  -shared -o libAg.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libAg.so $(OBJS) -lm
 
 Ag_basic.o    : Ag_basic.cc
 Ag_thermal.o  : Ag_thermal.cc

@@ -12,7 +12,7 @@ OBJS = HgCdTe_basic.o HgCdTe_band.o HgCdTe_gen.o HgCdTe_thermal.o \
        ../adolc_init.o
 
 libHgCdTe.so:$(OBJS)
-	$(CXX) -shared -o libHgCdTe.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libHgCdTe.so $(OBJS) -lm
 
 HgCdTe_band.o    : HgCdTe_band.cc
 HgCdTe_basic.o   : HgCdTe_basic.cc

@@ -9,7 +9,7 @@ all:  libPML.so
 
 OBJS = 	PML_basic.o PML_thermal.o
 libPML.so:  $(OBJS)  
-	$(CXX)  -shared -o libPML.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libPML.so $(OBJS) -lm
 
 PML_basic.o    : PML_basic.cc
 PML_thermal.o  : PML_thermal.cc

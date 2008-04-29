@@ -11,7 +11,7 @@ OBJS = InSb_basic.o InSb_band.o InSb_Optical.o InSb_thermal.o InSb_gen.o\
        ../adolc_init.o
 
 libInSb.so:$(OBJS)
-	$(CXX) -shared -o libInSb.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libInSb.so $(OBJS) -lm
 
 InSb_band.o    : InSb_band.cc
 InSb_basic.o   : InSb_basic.cc

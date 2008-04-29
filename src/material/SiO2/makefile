@@ -9,7 +9,7 @@ all:  libSiO2.so
 
 OBJS = 	SiO2_basic.o SiO2_thermal.o SiO2_Optical.o
 libSiO2.so:  $(OBJS)  
-	$(CXX)  -shared -o libSiO2.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libSiO2.so $(OBJS) -lm
 
 SiO2_basic.o    : SiO2_basic.cc
 SiO2_thermal.o  : SiO2_thermal.cc

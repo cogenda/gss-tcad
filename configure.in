@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(GSS, 0.45, gdiso@ustc.edu)
+AC_INIT(GSS, 0.46, gdiso@ustc.edu)
 AC_CONFIG_SRCDIR([src/main.cc])
 
 # Create a configuration header
@@ -30,9 +30,9 @@ AC_PROG_MAKE_SET
 
 CFLAGS=" -O1 "
 CXXFLAGS=" -O1 "
-LDFLAGS=
-CPPFLAGS=""
-LIBS=""
+#LDFLAGS=
+#CPPFLAGS=""
+#LIBS=""
 
 
 #--------------------------------------------------------------------------
@@ -150,6 +150,8 @@ case $host_os in
         AC_DEFINE([CYGWIN],,[Define to use CYGWIN env]);;
   *linux* )
         AC_DEFINE([LINUX],,[Define to use LINUX env]);;
+  *darwin* )
+        AC_DEFINE([DARWIN],,[Define to use DARWIN env]);;
 esac
 
 
@@ -174,7 +176,15 @@ if  test  "$Win32API" = 0 ; then
      AC_CHECK_LIB([X11], [XFlush],[X11LIBS="-lX11"])
   fi
 fi
-          
+
+AC_MSG_CHECKING([options for building dynamic library])
+case $host_os in
+  *darwin* )
+    LDFSHARED=" -dynamiclib ";;
+  *)
+    LDFSHARED=" -shared";;
+esac
+
 AC_PROG_MAKE_SET
 AC_SUBST(GSS_DIR)
 AC_SUBST(CGNSDIR)
@@ -184,6 +194,7 @@ AC_SUBST(HAVE_X11)
 AC_SUBST(INSTLIST)
 AC_SUBST(BIN_INSTALL_DIR)
 AC_SUBST(LIB_INSTALL_DIR)
+AC_SUBST(LDFSHARED)
 
 AC_CONFIG_FILES([make.defs])
 AC_OUTPUT

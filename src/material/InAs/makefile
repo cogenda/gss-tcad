@@ -11,7 +11,7 @@ OBJS = InAs_basic.o InAs_band.o InAs_Optical.o InAs_thermal.o InAs_gen.o\
        ../adolc_init.o
 
 libInAs.so:$(OBJS)
-	$(CXX) -shared -o libInAs.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libInAs.so $(OBJS) -lm
 
 InAs_band.o    : InAs_band.cc
 InAs_basic.o   : InAs_basic.cc

@@ -12,7 +12,7 @@ OBJS = 3C-SiC_basic.o 3C-SiC_band.o 3C-SiC_gen.o  3C-SiC_thermal.o \
        ../adolc_init.o
 
 libSiC3C.so:$(OBJS)
-	$(CXX) -shared -o libSiC3C.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libSiC3C.so $(OBJS) -lm
 
 3C-SiC_band.o          : 3C-SiC_band.cc
 3C-SiC_basic.o         : 3C-SiC_basic.cc

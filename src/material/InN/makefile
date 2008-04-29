@@ -11,7 +11,7 @@ OBJS = InN_basic.o InN_band.o InN_Optical.o InN_thermal.o InN_gen.o\
        ../adolc_init.o
 
 libInN.so:$(OBJS)
-	$(CXX) -shared -o libInN.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libInN.so $(OBJS) -lm
 
 InN_band.o    : InN_band.cc
 InN_basic.o   : InN_basic.cc

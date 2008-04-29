@@ -12,7 +12,7 @@ OBJS = SiGe_basic.o SiGe_band.o SiGe_gen.o SiGe_thermal.o \
        ../adolc_init.o
 
 libSiGe.so:$(OBJS)
-	$(CXX) -shared -o libSiGe.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libSiGe.so $(OBJS) -lm
 
 SiGe_band.o    : SiGe_band.cc
 SiGe_basic.o   : SiGe_basic.cc

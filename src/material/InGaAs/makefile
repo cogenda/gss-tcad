@@ -12,7 +12,7 @@ OBJS = InGaAs_basic.o InGaAs_band.o InGaAs_gen.o InGaAs_thermal.o \
        ../adolc_init.o
 
 libInGaAs.so:$(OBJS)
-	$(CXX) -shared -o libInGaAs.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libInGaAs.so $(OBJS) -lm
 
 InGaAs_band.o    : InGaAs_band.cc
 InGaAs_basic.o   : InGaAs_basic.cc

@@ -9,7 +9,7 @@ all:  libTiSi2.so
 
 OBJS = 	TiSi2_basic.o TiSi2_thermal.o TiSi2_Optical.o
 libTiSi2.so:  $(OBJS)  
-	$(CXX)  -shared -o libTiSi2.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libTiSi2.so $(OBJS) -lm
 
 TiSi2_basic.o    : TiSi2_basic.cc
 TiSi2_thermal.o  : TiSi2_thermal.cc

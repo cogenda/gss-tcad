@@ -9,7 +9,7 @@ all:  libCu.so
 
 OBJS = 	Cu_basic.o Cu_thermal.o Cu_Optical.o
 libCu.so:  $(OBJS)  
-	$(CXX)  -shared -o libCu.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libCu.so $(OBJS) -lm
 
 Cu_basic.o    : Cu_basic.cc
 Cu_thermal.o  : Cu_thermal.cc

@@ -13,7 +13,7 @@ OBJS = Ge_basic.o Ge_band.o Ge_gen.o Ge_thermal.o \
        ../adolc_init.o
 
 libGe.so:$(OBJS)
-	$(CXX) -shared -o libGe.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libGe.so $(OBJS) -lm
 
 Ge_band.o    : Ge_band.cc
 Ge_basic.o   : Ge_basic.cc

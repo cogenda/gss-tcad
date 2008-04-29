@@ -14,7 +14,7 @@ OBJS = Si_basic.o Si_band.o Si_gen.o Si_gen_Valdinoci.o Si_thermal.o \
        ../adolc_init.o
 
 libSi.so:$(OBJS)
-	$(CXX) -shared -o libSi.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libSi.so $(OBJS) -lm
 
 Si_band.o          : Si_band.cc
 Si_basic.o         : Si_basic.cc

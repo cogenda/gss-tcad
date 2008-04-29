@@ -12,7 +12,7 @@ OBJS = AlGaAs_basic.o AlGaAs_band.o AlGaAs_gen.o AlGaAs_thermal.o \
        ../adolc_init.o
 
 libAlGaAs.so:$(OBJS)
-	$(CXX) -shared -o libAlGaAs.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libAlGaAs.so $(OBJS) -lm
 
 AlGaAs_band.o    : AlGaAs_band.cc
 AlGaAs_basic.o   : AlGaAs_basic.cc

@@ -9,7 +9,7 @@ all:  libAu.so
 
 OBJS = 	Au_basic.o Au_thermal.o Au_Optical.o
 libAu.so:  $(OBJS)  
-	$(CXX)  -shared -o libAu.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libAu.so $(OBJS) -lm
 
 Au_basic.o    : Au_basic.cc
 Au_thermal.o  : Au_thermal.cc

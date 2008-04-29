@@ -9,7 +9,7 @@ all:  libVacuum.so
 
 OBJS = 	Vacuum_basic.o Vacuum_thermal.o
 libVacuum.so:  $(OBJS)  
-	$(CXX)  -shared -o libVacuum.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libVacuum.so $(OBJS) -lm
 
 Vacuum_basic.o    : Vacuum_basic.cc
 Vacuum_thermal.o  : Vacuum_thermal.cc

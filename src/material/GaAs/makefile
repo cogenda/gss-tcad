@@ -12,7 +12,7 @@ OBJS = GaAs_basic.o GaAs_band.o GaAs_gen.o GaAs_thermal.o \
        ../adolc_init.o
 
 libGaAs.so:$(OBJS)
-	$(CXX) -shared -o libGaAs.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libGaAs.so $(OBJS) -lm
 
 GaAs_band.o    : GaAs_band.cc
 GaAs_basic.o   : GaAs_basic.cc

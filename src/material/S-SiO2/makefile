@@ -14,7 +14,7 @@ OBJS = SiO2S_basic.o SiO2S_band.o SiO2S_gen.o  SiO2S_thermal.o \
        ../adolc_init.o
 
 libSiO2S.so:$(OBJS)
-	$(CXX) -shared -o libSiO2S.so $(OBJS) -lm
+	$(CXX) $(LDFSHARED) -o libSiO2S.so $(OBJS) -lm
 
 SiO2S_band.o          : SiO2S_band.cc
 SiO2S_basic.o         : SiO2S_basic.cc

@@ -9,7 +9,7 @@ all:  libNitride.so
 
 OBJS = 	Nit_basic.o Nit_thermal.o Nit_Optical.o
 libNitride.so:  $(OBJS)  
-	$(CXX)  -shared -o libNitride.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libNitride.so $(OBJS) -lm
 
 Nit_basic.o    : Nit_basic.cc
 Nit_thermal.o  : Nit_thermal.cc

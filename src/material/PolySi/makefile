@@ -9,7 +9,7 @@ all:  libPolySi.so
 
 OBJS = 	PolySi_basic.o PolySi_thermal.o PolySi_Optical.o
 libPolySi.so:  $(OBJS)  
-	$(CXX)  -shared -o libPolySi.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libPolySi.so $(OBJS) -lm
 
 PolySi_basic.o    : PolySi_basic.cc
 PolySi_thermal.o  : PolySi_thermal.cc

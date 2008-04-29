@@ -9,7 +9,7 @@ all:  libAir.so
 
 OBJS = 	Air_basic.o Air_thermal.o Air_Optical.o
 libAir.so:  $(OBJS)  
-	$(CXX)  -shared -o libAir.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libAir.so $(OBJS) -lm
 
 Air_basic.o    : Air_basic.cc
 Air_thermal.o  : Air_thermal.cc

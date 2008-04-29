@@ -9,7 +9,7 @@ all:  libAl.so
 
 OBJS = 	Al_basic.o Al_thermal.o Al_Optical.o
 libAl.so:  $(OBJS)  
-	$(CXX)  -shared -o libAl.so $(OBJS) -lm
+	$(CXX)  $(LDFSHARED) -o libAl.so $(OBJS) -lm
 
 Al_basic.o    : Al_basic.cc
 Al_thermal.o  : Al_thermal.cc
