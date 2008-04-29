@@ -1,0 +1,30 @@
+#==============================================================================
+# GSS example: Al Cylinder scatter field calculation with 1um light incident
+# We will compute opitcal-field distribution
+# For running it, use "gss CircularExam.inp"
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS   ModelFile=CirExam.cgns Triangle="pzqA"
+XMESH    WIDTH=7.0  N.SPACES=210
+YMESH    DEPTH=7.0  N.SPACES=210
+
+# Region and electrode statements
+REGION    Label=PML        Material=PML
+REGION    Label=Vacuum     Material=Vacuum  X.MIN=1.0  X.MAX=6.0    \
+          Y.MAX=-1.0  Y.MIN=-6.0
+REGION    Label=cylinder   Material=Al      Shape=Ellipse CentreX=3.5 \
+          CentreY=-3.5 Division=120  MajorRadii=1.0 MinorRadii=1.0
+#------------------------------------------------------------------------------
+PLOTMESH
+
+#Photogeneration State
+#Notice: WAVELEN must not be larger than 1/10 grid size 
+#PML thickness should be at least 1 wave length 
+PHOTOGEN  WAVELEN=1.0 INTENSITY=1.0  ANGLE=90  WTM=0.5 WTE=0.5
+METHOD    Type=EMFEM Scheme=Newton NS=LineSearch LS=LU
+SOLVE 
+    
+#export scatter field to VTK file format
+#one can use paraview to view the result
+EXPORT   CoreFile=CirExam.cgns  VTKFile=CirExam.vtk

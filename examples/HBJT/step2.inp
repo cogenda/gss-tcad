@@ -1,0 +1,38 @@
+#==============================================================================
+# GSS example: SiGe HBJT simulation
+# On the first step, we will calculate IV curve with Vc=2V.
+#==============================================================================
+
+set Carrier     = pn        
+set LatticeTemp = 3e2       
+set DopingScale = 1e20
+
+#------------------------------------------------------------------------------
+VSOURCE Type=VDC ID=VCC Tdelay=0 Vconst=2 
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact    ID=Emitter    Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Base       Res=1000 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Collector  Res=1000 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   CoreFile = hbjt.cgns  
+#PLOT     Variable=DeviceMesh
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=LU
+ATTACH   Electrode=Collector Vapp=VCC
+SOLVE    Type=STEADYSTATE
+SOLVE    Type=DCSWEEP VScan=Base    IVRecord=Base IVRecord=Collector \
+         IVFile=iv2.txt VStart=0.0 VStep=0.02 VStop=0.8
+EXPORT   CoreFile=bias.cgns	 
+PLOT     Variable=Nd           Resolution=RES.High    AzAngle=100  ElAngle=30 
+PLOT     Variable=Na           Resolution=RES.High    AzAngle=100  ElAngle=30 
+PLOT     Variable=ElecDensity  Resolution=RES.High    AzAngle=100  ElAngle=30 
+PLOT     Variable=HoleDensity  Resolution=RES.High    AzAngle=100  ElAngle=30
+PLOT     Variable=Potential    Resolution=RES.High    AzAngle=100  ElAngle=30 
+
+
+
+
+

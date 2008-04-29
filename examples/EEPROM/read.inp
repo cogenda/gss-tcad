@@ -1,0 +1,34 @@
+#==============================================================================
+# GSS example: EEPROM cell read Simulation
+#==============================================================================
+
+set Carrier     = pn        
+set Z.width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 2e20
+
+#------------------------------------------------------------------------------
+CONTACT   Type = GateContact        ID = Gate        WorkFunction=4.7
+# the floating gate is charged
+CONTACT   Type = FloatMetal         ID = Flt_Gate    QF=-2e-15 
+boundary  Type = OhmicContact       ID = Substrate   Res=0 Cap=0 Ind=0
+boundary  Type = InsulatorInterface ID = IF_Oxide_to_Silicon QF=0
+
+#------------------------------------------------------------------------------
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=0.1
+vsource Type = VPULSE ID = VGATE  Tdelay=0.2e-9   Tr=20e-12 Tf=20e-12 \
+                                  pw=2e-9 pr=4e-9  Vhi=5 Vlo=0
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS region=Silicon mobility=Lucent
+
+#------------------------------------------------------------------------------
+IMPORT    CoreFile = eeprom_init.cgns
+ATTACH   Electrode=Drain  VApp=VCC
+ATTACH   Electrode=Gate   VApp=VGATE
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=GMRES
+SOLVE    Type=TRANSIENT     IVRecord=Gate   IVRecord=Drain IVFile=iv.txt  \
+         TStart = 0 TStep=2e-12  TStop = 4e-9
+END
+

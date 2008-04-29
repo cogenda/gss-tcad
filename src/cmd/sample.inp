@@ -1,0 +1,122 @@
+# common line             
+# All the command has the syntax: keyword  parameter=string|double 
+# String must begin with character or underline.
+# Character, digital, underline and dot are allowed in string.
+# The length of string is limited to 30 characters.
+# Numerical value double support c syntax float point number.
+# The Unit in command file.:
+# Time Unit:ps  voltage Unit:V  Freq Unit:THz Length Unit:cm 
+#======================================================================
+# static command, in lower case 
+set Carrier     = pn        # specify carrier type support p,n or pn
+set DeviceDepth = 0.01	    # device depth in Z dimension. Unit:cm
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+#----------------------------------------------------------------------
+# voltage source. 
+# ID can be specified by user, limited to 32 characters, c syntax.  
+# reference: voltage source in spice model
+vsource Type = VDC    ID = GND  Tdelay=0.123 Vconst=0 
+vsource Type = VDC    ID = VCC  Tdelay=0 Vconst=5
+vsource Type = VSIN   ID = Vs   Tdelay=1 Vamp=0.1 Freq=1e-6 
+vsource Type = VEXP   ID = V1   Tdelay=0 TRC=1 TFD=3 TFC=1 Vlo=0 Vhi=1	
+vsource Type = VPULSE ID = V2   Tdelay=0 Tr=1 Tf=1 Pw=5 Pr=10 Vlo=0 Vhi=1
+#----------------------------------------------------------------------
+# current source. 
+# reference: current source in spice model
+isource Type = IDC    ID = I1   Tdelay=0 Iconst=5
+isource Type = ISIN   ID = I2   Tdelay=1 Iamp=0.1 Freq=1e-6 
+isource Type = IEXP   ID = I3   Tdelay=0 TRC=1 TFD=3 TFC=1 Ilo=0 Ihi=1	
+isource Type = IPULSE ID = I4   Tdelay=0 Tr=1 Tf=1 Pw=5 Pr=10 Ilo=0 Ihi=1
+#----------------------------------------------------------------------
+# specify region type.
+# GSS 0.3x can automatically set region type by RegionType in the cgns file
+# But the material data file used by GSS 0.4x needs the explicit specification   
+#region Type = Semiconductor ID=Silicon0  Material=Si   ParameterFile=Si.tcl
+#region Type = Insolator     ID=Oxide1    Material=SiO2 ParameterFile=SiO2.tcl
+#region Type = Conductor     ID=Elec2     Material=P-Si ParameterFile=P-Si.tcl
+#----------------------------------------------------------------------
+# specify boundary condition.
+# ID must accord with the boundary name in cgns file
+# electrode boundary
+# 	OhmicContract|SchottkyContract|GateContract|InsulatorContract
+# they have parameters of parasite res,cap and ind  unit:Om,F,H 
+# SchottkyContract has an extra parameter,the barrier height.
+# GateContract can specify the workfunc of gate electrode.
+# InsulatorContract offers a simple way for describing Si/SiO2 interface,
+#  	the Thick of oxide must be specified,
+# electrode boundary and NeumannBoundary has convective heat transfer coefficient h. unit: W/cm^2/K
+# and external temperature defined.
+# InsulatorInterface is the interface of Si/SiO2, has a fixed charge density QF,unit ?
+ 
+boundary Type = InsulatorContract  ID = SiSiO2    Res=0 Cap=0 Ind=0 Thickness=1e-6 Eps=3.9 WorkFunction=4.7 QF=0
+boundary Type = InsulatorInterface ID = IFACE     QF=0  
+boundary Type = GateContract       ID = GATE      Res=0 Cap=0 Ind=0 WorkFunction=4.7
+boundary Type = NeumannBoundary    ID = WALL      Heat.Transfer=0 EXT.Temp=300
+boundary Type = SchottkyContract   ID = sgate     Res=0 Cap=0 Ind=0 VBarrier=0.8 
+boundary Type = OhmicContract      ID = OMANODE   Res=0 Cap=0 Ind=0 
+boundary Type = OhmicContract      ID = OMCATHODE Res=0 Cap=0 Ind=0  
+boundary Type = OhmicContract      ID = NSOURCE   Res=0 Cap=0 Ind=0 ConnectTo=PDRAIN 
+boundary Type = OhmicContract      ID = NDRAIN    Res=0 Cap=0 Ind=0  
+boundary Type = OhmicContract      ID = PSOURCE   Res=0 Cap=0 Ind=0  
+boundary Type = OhmicContract      ID = PDRAIN    Res=0 Cap=0 Ind=0  
+boundary Type = OhmicContract      ID = OMSUB     Res=0 Cap=0 Ind=0  
+#FloatMetalGate   may support later
+ 
+#===========================================================================
+# drive command, specify the solving process. # keyword is in upper care 
+# reference: medici user's guide
+#---------------------------------------------
+# METHOD Type = [DDML1|DDML2]  Scheme = [Newton|Gummel] &
+#        NS = [Basic|LineSearch|TrustRegion] &
+#        LS = [LU|BCGS|GMRES]
+#---------------------------------------------
+# ATTACH Electrode = electrode_name  Type=Voltage VApp = vsource_name1 VApp = vsource_name2 ...
+# ATTACH Electrode = electrode_name  Type=Current IApp = isource_name1 IApp = isource_name2 ...
+#---------------------------------------------
+# SOLVE Type = EQUILIBRIUM
+# SOLVE Type = STEADYSTATE
+# SOLVE Type = DCSWEEP  VScan = electrode_name  IV.Record = electrode_name  &
+#       IV.File = file_name VStart = v_number VStep = v_number VStop = v_number
+# SOLVE Type = TRANSIENT  ODE.Formula = [BDF1|BDF2] AUTOSAVE = time_number   IV.Record = electrode_name &
+#       IV.File = file_name TStart = time_number TStep = time_number TStop = time_number
+#---------------------------------------------
+# MODELS not supported yet
+#---------------------------------------------
+# IMPORT [CoreFile = file_name | ModelFile = file_name ]
+#---------------------------------------------
+# EXTRACT CoreFile = file_name    AscFile = file_name
+#---------------------------------------------
+# REFINE Variable = [Doping|Potential] Measure = [Linear|SignedLog] Dispersion = number
+#---------------------------------------------
+# PLOT   Variable = Mesh Resolution=[Low|Middle|High] PSFile=file_name
+# PLOT   Variable =[Na|Nd|ElecDensity|HoleDensity|Potential|EFieldX|EFieldy|Temperature] 
+#        Resolution=[Low|Middle|High] PSFile=file_name Measure=[Linear|SignedLog]
+#        AzAngle=angle_number ElAngle=angle_number Style=[Scale|Color|GrayLevel]
+#===========================================================================
+ 
+METHOD   Type = DDML1   Scheme = Newton   TStep=1e3         #specify DDM method,this is the default solver. 
+PLOT     Variable=DeviceMesh
+REFINE   Variable=Doping Measure=SignedLog Dispersion=1   #refine by doping
+SOLVE    Type=EQUILIBRIUM 	                          #compute equilibrium state
+REFINE   Variable=Potential Measure=Linear Dispersion=0.1 #refine by potential
+PLOT     Variable=DeviceMesh
+SOLVE    Type=EQUILIBRIUM 	                          #compute equilibrium state again
+PLOT     Variable=Na Resolution=RES.Middle    AzAngle=240  ElAngle=40  Style=Scale
+PLOT     Variable=Nd Resolution=RES.Middle    AzAngle=240  ElAngle=40  Style=Scale
+PLOT     Variable=ElecDensity PSFile=electron Resolution=RES.High    AzAngle=240  ElAngle=40  Style=Color
+PLOT     Variable=HoleDensity PSFile=hole     Resolution=RES.High    AzAngle=240  ElAngle=40  Style=Color
+PLOT     Variable=Potential   Resolution=RES.High    AzAngle=240  ElAngle=40  Style=GrayLevel
+# extract mesh and solution
+EXTRACT  CoreFile=init.cgns   
+
+IMPORT   CoreFile=init.cgns                    # import it
+ATTACH   Electrode=OMCATHODE  VApp=GND         # attach vsource to boundary(electrode) 
+# DC sweep   
+SOLVE    Type=DCSWEEP  VScan=OMANODE  IVRecord=OMANODE  IVFile=iv.txt VStart=0 VStep=1e-2 VStop=1 
+
+#IMPORT CoreFile=break.cgns 
+#ATTACH   Electrode=OMANODE    VApp=VCC         VApp=Vs
+
+
+
+

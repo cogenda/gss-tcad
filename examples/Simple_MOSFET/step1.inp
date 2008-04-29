@@ -1,0 +1,67 @@
+#==============================================================================
+# GSS example: N-channle MOSFET simulation with InsulatorContact boundary type
+# Here, we use 3rd boundary type instead of SiO2 layer.
+# In this step, we will read the initial mesh and compute equilibrium state.
+# For running it, use "gss step1.inp"
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS   ModelFile=nmos.cgns Triangle="pzA"
+XMESH    WIDTH=0.5  N.SPACES=10
+XMESH    WIDTH=1.0  N.SPACES=15
+XMESH    WIDTH=0.5  N.SPACES=10
+YMESH    DEPTH=0.5  N.SPACES=10 Ratio=1.2
+YMESH    DEPTH=1.5  N.SPACES=10
+ELIMINATE    Direction=COLUMNS  Y.TOP=-0.5
+# Region and electrode statements
+REGION    Label=Si Material=Si
+SEGMENT   Label=ISGATE     Location=TOP   X.MIN=0.3 X.MAX=1.7
+SEGMENT   Label=OMDRAIN    Location=TOP   X.MIN=0.0 X.MAX=0.2
+SEGMENT   Label=OMSOURCE   Location=TOP   X.MIN=1.8 X.MAX=2.0
+SEGMENT   Label=OMSUB      Location=BOTTOM
+
+# Specify impurity profiles
+PROFILE   Type=Uniform Ion=Acceptor  N.PEAK=1E16  X.MIN=0.0 X.MAX=2.0  \
+          Y.TOP=0.0 Y.BOTTOM=-2.0
+PROFILE   Type=Gauss   Ion=Donor  N.PEAK=1E19  X.MIN=0.0  X.MAX=0.3  \  
+          Y.TOP=0.0 Y.BOTTOM=0.0  X.CHAR=0.08  Y.CHAR=0.1
+PROFILE   Type=Gauss   Ion=Donor  N.PEAK=1E19  X.MIN=1.7  X.MAX=2.0  \  
+          Y.TOP=0.0 Y.BOTTOM=0.0  X.CHAR=0.08  Y.CHAR=0.1
+
+set DopingScale = 1e19
+
+#------------------------------------------------------------------------------
+# no voltage source is needed here.
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=InsulatorContact ID=ISGATE    Eps=3.9 Thickness=0.2e-6  \
+         QF=0 WorkFunction=4.7
+boundary Type=OhmicContact     ID=OMSOURCE  Res=0 Cap=0 Ind=0 EXT.Temp=300
+boundary Type=OhmicContact     ID=OMDRAIN   Res=0 Cap=0 Ind=0 EXT.Temp=300
+boundary Type=OhmicContact     ID=OMSUB     Res=0 Cap=0 Ind=0 Heat.Transfer=1e4 
+      
+#------------------------------------------------------------------------------
+# specify cgns file which contains mesh,doping and boundary lable
+IMPORT   ModelFile = nmos.cgns 
+PLOT     Variable=DeviceMesh
+REFINE   Variable=Doping Measure=SignedLog Dispersion=3   #refine by doping
+#specify DDM method with trust region
+METHOD   Type = DDML1   Scheme = Newton   NS=LineSearch LS=gmres  
+PLOT     Variable=DeviceMesh
+#compute equilibrium state
+SOLVE    Type=EQUILIBRIUM 	                          
+REFINE   Variable=Potential Dispersion=0.1   #refine by doping
+PLOT     Variable=DeviceMesh
+#compute equilibrium state again
+SOLVE    Type=EQUILIBRIUM 	
+
+PLOT     TIFF.OUT=p.tiff Variable=Potential    Resolution=RES.High  AzAngle=240  ElAngle=40 
+PLOT     TIFF.OUT=ex.tiff Variable=EFieldX      Resolution=RES.High  AzAngle=240  ElAngle=60 
+PLOT     TIFF.OUT=ey.tiff Variable=EFieldY      Resolution=RES.High  AzAngle=240  ElAngle=60 
+PLOT     Variable=ElecDensity  Resolution=RES.High  AzAngle=240  ElAngle=40 
+PLOT     Variable=HoleDensity  Resolution=RES.High  AzAngle=100  ElAngle=40 
+PLOT     Variable=Temperature  Resolution=RES.High  AzAngle=240  ElAngle=40
+# export mesh and solution
+EXPORT  CoreFile=mos_init.cgns
+

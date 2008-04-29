@@ -1,0 +1,30 @@
+#==============================================================================
+# GSS example: Square Al scattering example with light source and PML boundary
+# For running it, use "gss Square.inp"
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS   ModelFile=PMLExam.cgns Triangle="pzA"
+XMESH    WIDTH=7.0  N.SPACES=210
+YMESH    DEPTH=7.0  N.SPACES=210
+
+# Region and electrode statements
+REGION    Label=PML     Material=PML
+REGION    Label=Vacuum  Material=Vacuum  X.MIN=1.0  X.MAX=6.0  Y.MAX=-1.0  Y.MIN=-6.0
+REGION    Label=Square  Material=Al      X.MIN=2.5  X.MAX=4.5  Y.MAX=-2.5  Y.MIN=-4.5
+          
+#------------------------------------------------------------------------------
+# some light source is needed here.
+LSOURCE Type=UNIFORM T0=0
+
+#------------------------------------------------------------------------------
+PLOTMESH
+
+#Photogeneration State
+PHOTOGEN  WAVELEN=1.0 INTENSITY=1.0  ANGLE=90  WTM=0.5 WTE=0.5
+METHOD    Type=EMFEM  LS=LU
+SOLVE     
+
+#export scatter field to VTK file format
+#one can use paraview to view the result
+EXPORT   CoreFile=Square.cgns  VTKFile=Square.vtk

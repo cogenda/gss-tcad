@@ -1,0 +1,55 @@
+#==============================================================================
+# GSS example: PN Diode simulation
+# On this step, we will first calculate the forward IV curve by voltage 
+# and current sewwps. Then we will compute reverse breakdown IV curve. 
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type support p,n or pn
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+set DopingScale = 1e16
+
+#------------------------------------------------------------------------------
+# no voltage source is needed.
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact      ID = Anode   Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact      ID = Cathode Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# Import CGNS file generated at first step
+IMPORT   CoreFile=pn.cgns 
+
+#------------------------------------------------------------------------------
+# DC sweep forward
+# sweep with voltage boundary condition
+METHOD   Type=DDML1E   Scheme=Newton  NS=LineSearch LS=GMRES EJModel=On
+SOLVE    Type=DCSWEEP  VScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivfp1.txt VStart=0 VStep=0.02 VStop=0.6
+EXPORT   CoreFile=f0.6.cgns
+
+# sewwp with current boundary condition
+METHOD   Type=DDML1E   Scheme=Newton  NS=LineSearch LS=GMRES EJModel=On
+SOLVE    Type=DCSWEEP  IScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivfp2.txt IStart=0.014 IStep=1e-2 IStop=0.1
+
+
+#------------------------------------------------------------------------------
+# DC sweep backward
+# sweep with voltage boundary condition
+IMPORT   CoreFile=pn.cgns 
+METHOD   Type=DDML1E   Scheme=Newton  NS=LineSearch LS=GMRES ImpactIonization=On
+SOLVE    Type=DCSWEEP  VScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivb.txt VStart=0 VStep=-0.1 VStop=-75
+EXPORT   CoreFile=b75.cgns
+
+PLOT     Variable=ElecDensity Resolution=RES.High    AzAngle=40    ElAngle=40
+PLOT     Variable=HoleDensity Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=Potential   Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=EFieldX   Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=EFieldY   Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=Temperature Resolution=RES.High    AzAngle=40  ElAngle=40
+# note: the first column of IVFile is the voltage of electrode, unit:V
+# the second column is current, unit:mA.
+
+

@@ -1,0 +1,33 @@
+#==============================================================================
+# GSS example: A thyristor dimmer circult (used in i.e. reading lamp) simulation.
+#==============================================================================
+
+#------------------------------------------------------------------------------
+set Carrier     = pn        # specify carrier type
+set Z.width     = 100	    # device width in Z dimension. Unit:um
+set LatticeTemp = 3e2       # specify initial temperature of device at 300K.
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+vsource Type = VSIN   ID = Vs   Tdelay=0 Vamp=5.0 Freq=1e6  # 1MHz
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact      ID=Anode   Res=10  Cap=0 Ind=0
+boundary Type = OhmicContact      ID=Cathode Res=0   Cap=0 Ind=0
+boundary Type = OhmicContact      ID=Gate    Res=510 Cap=1e-9 Ind=0 
+# adjust Gate R or C can control the pass through angle.  
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   CoreFile=Thyristor.cgns
+PLOT     Variable=DeviceMesh
+
+# specify DDM method,this is the default solver.
+ATTACH   Electrode=Anode   VApp=Vs
+ATTACH   Electrode=Gate    VApp=Vs 
+METHOD   Type=DDML1E   Scheme=Newton   NS=Basic LS=GMRES Damping=Potential
+SOLVE    Type=TRANSIENT     IVRecord=Anode   IVRecord=Gate IVFile=iv.txt  \
+         TStart = 0 TStep=1e-8  TStop = 3e-6
+
+END

@@ -1,0 +1,48 @@
+#==============================================================================
+# GSS example: MESFET
+# Create an initial simulation mesh
+#==============================================================================
+MESH      Type=GSS   ModelFile=mesfet.cgns Triangle="pzA"
+XMESH     WIDTH=3.0  N.SPACES=30
+YMESH     DEPTH=0.2  N.SPACES=20
+YMESH     DEPTH=0.3  N.SPACES=10
+
+# Region and electrode statements
+REGION    Label=MESFET  Material=GaAs
+SEGMENT   Label=SOURCE  Location=TOP  X.MIN=0.0 X.MAX=0.5
+SEGMENT   Label=GATE    Location=TOP  X.MIN=1.0 X.MAX=1.5
+SEGMENT   Label=DRAIN   Location=TOP  X.MIN=2.5 X.MAX=3.0
+
+PROFILE   Type=Uniform Ion=Donor  N.PEAK=1E14  X.MIN=0.0 X.MAX=3.0  \
+          Y.TOP=0.0 Y.BOTTOM=-0.5
+PROFILE   Type=Uniform Ion=Donor  N.PEAK=2E17  X.MIN=0.0 X.MAX=3.0  \
+          Y.TOP=0.0 Y.BOTTOM=-0.1
+
+#------------------------------------------------------------------------------
+set Carrier     = pn        
+set Z.width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 2e17
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=OhmicContact      ID=SOURCE Res=0 Cap=0 Ind=0
+boundary Type=OhmicContact      ID=DRAIN  Res=0 Cap=0 Ind=0
+boundary Type=SchottkyContact   ID=GATE   Res=0 Cap=0 Ind=0 Workfunction=4.9
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+PLOT     Variable=Mesh
+#specify DDM method,this is the default solver.
+METHOD   Type = DDML1   Scheme = Newton NS=LineSearch LS=GMRES Damping=Potential
+#compute equilibrium state
+SOLVE    Type=EQUILIBRIUM 
+	                          
+PLOT     Variable=Nd Resolution=RES.High   AzAngle=40  ElAngle=40  Style=Color
+PLOT     Variable=ElecDensity Resolution=RES.High    AzAngle=40    ElAngle=40
+PLOT     Variable=HoleDensity Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=Potential Resolution=RES.High    AzAngle=40  ElAngle=40
+
+# export mesh and solution
+EXPORT   CoreFile=mesfet.cgns
+END

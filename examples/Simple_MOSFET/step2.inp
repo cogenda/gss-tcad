@@ -1,0 +1,55 @@
+#==============================================================================
+# GSS example: N-channle MOSFET simulation with InsulatorContact boundary type
+# On this step, we will compute IV curvy at the gate bias of 3V by two steps.
+# First, we fix Vds=0V and graduallay increase gate potential from 0.0 to 3.0V.
+# Here, we save the bias file mos_bias.cgns for step3.
+# Then, we increase drain potential when gate potential fixed to 3.0V to get
+# the IV curve.
+#==============================================================================
+
+set DopingScale = 1e19
+
+#------------------------------------------------------------------------------
+# some voltage sources are needed here.
+vsource Type = VDC    ID = GND  Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC  Tdelay=0   Vconst=4
+vsource Type = VDC    ID = VGATE  Tdelay=0 Vconst=3
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=InsulatorContact  ID=ISGATE    Eps=3.9 Thickness=0.2e-6 \
+         WorkFunction=4.7
+boundary Type=OhmicContact      ID=OMSOURCE  Res=0 Cap=0 Ind=0
+boundary Type=OhmicContact      ID=OMDRAIN   Res=0 Cap=0 Ind=0
+boundary Type=OhmicContact      ID=OMSUB     Res=0 Cap=0 Ind=0
+
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   CoreFile=mos_init.cgns
+# set SOURCE to ground
+ATTACH   Electrode=OMSOURCE   VApp=GND
+# specify DDM method 
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=BCGS
+# Use DCSWEEP solver to get initial state of VGATE=3V
+SOLVE    Type=DCSWEEP VScan=ISGATE     IVRecord=OMDRAIN  IVFile=iv.txt \
+         VStart=0 VStep=0.05 VStop=3
+PLOT     Variable=Potential Measure=Linear     AzAngle=240  ElAngle=40
+PLOT     Variable=ElecDensity Measure=Linear   AzAngle=240  ElAngle=40
+PLOT     Variable=HoleDensity Measure=Linear   AzAngle=100  ElAngle=40
+EXPORT   CoreFile=mos_bias.cgns
+
+
+#IMPORT   CoreFile=mos_bias.cgns
+# set GATE potential
+ATTACH   Electrode=ISGATE      VApp=VGATE
+METHOD   Type=DDML2E   Scheme=Newton NS=LineSearch LS=GMRES
+
+#Get IV curve of VGATE=3V
+SOLVE    Type=DCSWEEP VScan=OMDRAIN    IVRecord=OMSOURCE IVRecord=OMDRAIN  \
+         IVFile=iv1.txt VStart=0.0 VStep=0.1 VStop=3.0
+PLOT     TIFF.OUT=P.TIFF Variable=Potential   Resolution=RES.High    AzAngle=240  ElAngle=40
+PLOT     TIFF.OUT=n.TIFF Variable=ElecDensity Resolution=RES.High    AzAngle=240  ElAngle=40
+PLOT     TIFF.OUT=p.TIFF Variable=HoleDensity Resolution=RES.High    AzAngle=100  ElAngle=40
+PLOT     TIFF.OUT=T.TIFF Variable=Temperature Resolution=RES.High    AzAngle=40   ElAngle=40
+EXPORT   CoreFile=mos_open.cgns

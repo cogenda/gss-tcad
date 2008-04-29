@@ -1,0 +1,35 @@
+#==============================================================================
+# GSS mix-type simulation file for 1.5 Micron P-Channel MOSFET
+#==============================================================================
+
+set Carrier     = pn
+set Z.width     = 4
+set LatticeTemp = 3e2
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+# voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=5
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorInterface ID=IF_POxide_to_PSilicon QF=0
+boundary Type = GateContact        ID=PGate        WorkFunction=5.25
+boundary Type = OhmicContact       ID=PSubstrate   Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID=PSource Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID=PDrain  Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS region=Si mobility=Lucent
+
+#------------------------------------------------------------------------------
+# IMPORT PMOS MODEL
+IMPORT   CoreFile=pmos_init.cgns
+METHOD   Type = DDML1MIX   Scheme = Newton  NS=Basic LS=GMRES ServerPort=17002
+SOLVE    
+
+END
+

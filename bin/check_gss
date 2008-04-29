@@ -1,0 +1,3 @@
+#!/bin/sh
+LOGFILE="$@.valgrind.log"
+valgrind --leak-check=full --show-reachable=yes --error-limit=no --log-file-exactly=$LOGFILE gss "$@"

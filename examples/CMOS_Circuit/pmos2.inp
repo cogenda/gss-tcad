@@ -1,0 +1,56 @@
+#==============================================================================
+# GSS example: 1.5 Micron P-Channel MOSFET
+# We fix the gate potential at 5V and sweep source-drain IV curve with 
+# DDML1E solver.
+#==============================================================================
+
+set Carrier     = pn
+set Z.width     = 4
+set LatticeTemp = 3e2
+set DopingScale = 1e18
+#------------------------------------------------------------------------------
+# voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=-5
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=-5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorInterface ID = IF_POxide_to_PSilicon QF=0
+boundary Type = GateContact       ID = PGate        WorkFunction=5.25
+boundary Type = OhmicContact      ID = PSubstrate   Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact      ID = PSource Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact      ID = PDrain  Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS region=Si mobility=Lucent
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+# solve the tranfer function
+IMPORT   CoreFile=pmos_init.cgns
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP VScan=PDrain  VStart=0.0 VStep=-0.1 VStop=-5.0
+ATTACH   Electrode=PDrain           VApp=VCC
+SOLVE    Type=DCSWEEP VScan=PGate  IVRecord=PGate IVRecord=PDrain \
+         IVFile=tfp.txt VStart=0.0 VStep=-0.1 VStop=-5.0
+
+
+IMPORT   CoreFile=pmos_init.cgns
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP VScan=PGate    VStart=0.0 VStep=-0.1 VStop=-5.0
+EXPORT   CoreFile=pmos_bias.cgns
+
+IMPORT   CoreFile=pmos_bias.cgns
+ATTACH   Electrode=PGate             VApp=VGATE
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP VScan=PDrain  IVRecord=PDrain \
+         IVRecord=PSource \
+         IVFile=iv1p.txt VStart=0.0 VStep=-0.1 VStop=-5.0
+EXPORT   CoreFile=pmos_open.cgns
+
+END
+
+
+

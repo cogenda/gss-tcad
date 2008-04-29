@@ -1,0 +1,34 @@
+#==============================================================================
+# GSS example: HEMT simulation
+# The model is created by Medici.
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type.
+set Z.width     = 1	    # device width in Z dimension.
+set LatticeTemp = 3e2       # specify initial temperature of device.
+set DopingScale = 1e20
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact    ID=IF_GaAs0_to_Substrate8 Res=0 Cap=0 Ind=0
+boundary Type = SchottkyContact ID=IF_AlGaAs2_to_Gate3    WorkFunction=4.7
+#boundary Type = OhmicContact    ID=IF_AlGaAs2_to_Gate3
+boundary Type = OhmicContact    ID=IF_GaAs4_to_Source6    Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=IF_Drain7_to_GaAs5     Res=0 Cap=0 Ind=0
+
+
+#------------------------------------------------------------------------------
+# specify cgns file which contains mesh,doping and boundary lable
+IMPORT   ModelFile = HEMT.cgns  
+PLOT     Variable=DeviceMesh
+METHOD   Type = DDML1   Scheme = Newton   NS=TrustRegion LS=LU
+SOLVE    Type = TRANSIENT TStart = 0 TStep=1e-12  TStop = 1e-11
+#compute equilibrium state
+SOLVE    Type=EQUILIBRIUM 	                          
+PLOT     Variable=Nd Measure=Linear AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=Na Measure=Linear AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=ElecDensity Measure=Linear AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=HoleDensity Measure=Linear AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=Potential Measure=Linear   AzAngle=100  ElAngle=30 Style=Color
+# export mesh and solution
+

@@ -1,0 +1,14 @@
+Mixed Device/Circuit simulation of Diode 
+
+Vpp 1       0         SIN(0 1.0 1MEGHz)
+Vnn 3       0         0v
+N1  2=Anode 3=Cathode M_N1 
+R1  1       2     1k
+.MODEL M_N1 NDEV  remote=localhost port=17001
+
+*.option acct abstol=1e-9 reltol=0.001 trtol=7.0 itl2=100
+.option acct itl2=100
+.tran 0.01us 1.5us
+.print i(Vpp)
+.plot tran i(Vpp)
+.END

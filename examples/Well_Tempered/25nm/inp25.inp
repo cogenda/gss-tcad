@@ -1,0 +1,34 @@
+#==============================================================================
+# GSS benchmark: 25nm N-Channel MOSFET
+#==============================================================================
+
+#------------------------------------------------------------------------------
+set Carrier     = pn        
+set Z.width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 1e20
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary  Type = OhmicContact        ID = source Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = drain  Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = gate   Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = bulk   Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   ModelFile=25nm.cgns
+PLOT     TIFF.OUT=25nm.tiff Variable=DeviceMesh Resolution=RES.High
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=LU
+# compute equilibrium state
+SOLVE    Type=EQUILIBRIUM
+
+PLOT     TIFF.OUT=Na.tiff Variable=Na        Resolution=RES.High    AzAngle=120  ElAngle=60
+PLOT     Variable=Nd        Resolution=RES.High    AzAngle=120  ElAngle=60
+PLOT     Variable=Potential Resolution=RES.High    AzAngle=240  ElAngle=20
+PLOT     Variable=ElecDensity      Resolution=RES.High    AzAngle=240  ElAngle=20
+PLOT     Variable=EFieldX   Resolution=RES.High    AzAngle=40   ElAngle=20
+PLOT     Variable=EFieldY   Resolution=RES.High    AzAngle=40   ElAngle=20
+
+EXPORT   CoreFile=NMOS.init.cgns
+END

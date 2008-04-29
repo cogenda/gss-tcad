@@ -1,0 +1,105 @@
+#==============================================================================
+# GSS example: SOI heat simulation
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type.
+set Z.width     = 1	    # device width in Z dimension.
+set LatticeTemp = 3e2       # specify initial temperature of device.
+set DopingScale = 1e17
+
+MESH      Type=GSS   ModelFile=SOI.cgns  Triangle="pzA"
+
+XMESH WIDTH=0.5 H1=0.1   H2=0.020
+XMESH WIDTH=0.5 H1=0.020 H2=0.020
+XMESH WIDTH=0.5 H1=0.020 H2=0.1
+
+YMESH N.SPACES=2 Y.MAX=0.02 Y.MIN=0
+YMESH DEPTH=0.1 H1=0.020 H2=0.020
+YMESH DEPTH=0.3 H1=0.05
+YMESH DEPTH=1   H1=0.2 
+
+ELIMINATE DIRECTION=COLUMNS  X.MIN=0.4 X.MAX=1.1 Y.TOP=-0.1 
+ELIMINATE DIRECTION=COLUMNS  Y.TOP=-0.5
+
+REGION Label=Gate_Ox   Y.TOP=0.02  Y.BOTTOM=0.00    Material=SiO2
+REGION Label=Device    Y.TOP=0.0   Y.BOTTOM=-0.1    Material=Si
+REGION Label=Buried_Ox Y.TOP=-0.1  Y.BOTTOM=-0.4   Material=SiO2
+REGION Label=Bulk      Y.TOP=-0.4  Y.BOTTOM=-1.4   Material=Si
+
+REGION Label=Source X.MIN=0.0 X.MAX=0.3   Y.MIN=0.0  Y.MAX=0.02 Material=Elec
+REGION Label=Drain  X.MIN=1.2 X.MAX=1.5   Y.MIN=0.0  Y.MAX=0.02 Material=Elec
+REGION Label=Gate   X.MIN=0.5 X.MAX=1.0   Y.MIN=0.01 Y.MAX=0.02 Material=Elec
+SEGMENT Label=Substrate Location=BOTTOM
+
+PROFILE Ion=Acceptor N.PEAK=1E16 Type=Uniform X.MIN=0.0 X.MAX=1.5\
+        Y.MAX=0.0    Y.MIN=-1.4            
+PROFILE Ion=Donor    Type=Gauss N.PEAK=2E17 X.MIN=0.0 X.MAX=0.5 X.CHAR=0.05 \
+        Y.MAX=0.0    Y.MIN=-0.1 Y.CHAR=0.01
+PROFILE Ion=Donor    Type=Gauss N.PEAK=2E17 X.MIN=1.0 X.MAX=1.5 X.CHAR=0.05 \
+        Y.MAX=0.0    Y.MIN=-0.1 Y.CHAR=0.01
+
+#------------------------------------------------------------------------------
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=5
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorInterface ID=IF_Device_to_Gate_Ox QF=0
+contact  Type = GateContact        ID=Gate  WorkFunction=4.17  Heat.Transfer=0
+contact  Type = OhmicContact       ID=Source Heat.Transfer=1e3
+contact  Type = OhmicContact       ID=Drain  Heat.Transfer=1e3
+boundary Type = InsulatorInterface ID=IF_Buried_Ox_to_Device QF=0
+boundary Type = InsulatorInterface ID=IF_Bulk_to_Buried_Ox QF=0
+boundary Type = OhmicContact       ID=Substrate  Heat.Transfer=1e4
+
+PMIS     Region=Device Mobility=Lucent
+PMIS     Region=Bulk   Mobility=Analytic
+
+#------------------------------------------------------------------------------
+# compute a initial distrubution of p and n
+# here we first use a transient solver to dump the init shock.
+# then compute the steady-state distributions. 
+PLOT     Variable=DeviceMesh
+REFINE   Variable=Doping Measure=SignedLog Dispersion=3  Triangle="praDzQ" 
+PLOT     Variable=DeviceMesh
+METHOD   Type = DDML1    Scheme = Newton   NS=Basic  LS=GMRES
+SOLVE    Type = TRANSIENT TStart = 0 TStep=1e-12  TStop = 1e-11
+SOLVE    Type = EQUILIBRIUM
+EXPORT   CoreFile=soi_init.cgns
+
+PLOT     Variable=Nd          Resolution=RES.High   AzAngle=120  ElAngle=60
+PLOT     Variable=Na          Resolution=RES.High   AzAngle=120  ElAngle=60
+PLOT     Variable=ElecDensity Resolution=RES.High   Measure=SignedLog 
+PLOT     Variable=HoleDensity Resolution=RES.High   Measure=SignedLog 
+PLOT     Variable=Potential   Resolution=RES.High   AzAngle=240  ElAngle=20
+
+# set gate bias by dcsweep method
+METHOD   Type = DDML1    Scheme=Newton   NS=Basic  LS=GMRES
+SOLVE    Type=DCSWEEP VScan=Gate VStart=0.0 VStep=0.02 VStop=5
+EXPORT   CoreFile=gate.cgns
+
+# add source-drain bias. we use ddm solver without lattice heating here.
+METHOD   Type = DDML1E    Scheme = Newton   NS=Basic  LS=LU
+ATTACH   Electrode=Gate   Vapp=VGATE
+SOLVE    Type=DCSWEEP VScan=Drain VStart=0.0 VStep=0.02 VStop=5 \
+         IVRecord=Drain IVFile=drain_nh.txt
+
+IMPORT    CoreFile=gate.cgns
+ATTACH   Electrode=Gate Vapp=VGATE
+# we use ddm solver with lattice heating here.
+METHOD   Type = DDML2E    Scheme = Newton   NS=Basic  LS=LU
+SOLVE    Type=DCSWEEP VScan=Drain VStart=0.0 VStep=0.02 VStop=5 \
+         IVRecord=Drain IVFile=drain_ht.txt
+
+PLOT     Variable=ElecDensity Resolution=RES.High  AzAngle=120  ElAngle=60
+PLOT     Variable=HoleDensity Resolution=RES.High  AzAngle=120  ElAngle=60
+PLOT     Variable=Potential   Resolution=RES.High  AzAngle=240  ElAngle=20
+PLOT     Variable=EFieldX     Resolution=RES.High  AzAngle=40   ElAngle=20
+PLOT     Variable=EFieldY     Resolution=RES.High  AzAngle=40   ElAngle=20
+PLOT     Variable=Temperature Resolution=RES.High  AzAngle=40   ElAngle=20
+
+END
+
+
+

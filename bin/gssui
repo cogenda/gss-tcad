@@ -1,0 +1,19 @@
+#!/bin/sh
+
+GUI=""
+
+if test -f $GSS_DIR/bin/gui.tcl ; then
+    GUI=$GSS_DIR/bin/gui.tcl
+fi
+
+if test -z "$GUI" ; then
+  echo "Error: GUI tcl script not found"
+  exit 1
+fi
+
+
+if test "$#" = 0 ; then
+  exec wish $GUI
+else
+  exec wish $GUI "$@"
+fi

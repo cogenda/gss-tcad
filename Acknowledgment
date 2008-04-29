@@ -1,0 +1,7 @@
+I will give great thanks to the developers of PETSC, which is the best algebraic package
+since BLAS/LAPACK.
+
+I would also thank Jonathan Richard Shewchuk for his Triangle code, a perfect
+mesh generator. The Triangle code is used as preprocessor and mesh refiner in GSS.
+
+At last, CGNS system developed in NASA... oh, it is free but really hard to use and troubles me much.

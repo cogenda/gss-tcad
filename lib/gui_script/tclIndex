@@ -1,0 +1,105 @@
+# Tcl autoload index file, version 2.0
+
+# balloon.tcl
+
+set auto_index(set_balloon) "source $dir/balloon.tcl"
+set auto_index(end_balloon) "source $dir/balloon.tcl"
+set auto_index(entry_balloon) "source $dir/balloon.tcl"
+
+
+# combobox.tcl
+
+set auto_index(ComboboxCreate) "source $dir/combobox.tcl"
+set auto_index(ComboboxConfig) "source $dir/combobox.tcl"
+set auto_index(ComboboxGet) "source $dir/combobox.tcl"
+set auto_index(ComboboxInsert) "source $dir/combobox.tcl"
+set auto_index(ComboboxDelete) "source $dir/combobox.tcl"
+set auto_index(ComboboxEntry) "source $dir/combobox.tcl"
+set auto_index(ComboboxValue) "source $dir/combobox.tcl"
+set auto_index(ComboboxIndex) "source $dir/combobox.tcl"
+
+# config.tcl
+
+set auto_index(do_config) "source $dir/config.tcl"
+set auto_index(setup_fonts) "source $dir/config.tcl"
+set auto_index(setup_windows) "source $dir/config.tcl"
+set auto_index(config_init) "source $dir/config.tcl"
+
+# dialog.tcl
+
+set auto_index(dialog) "source $dir/dialog.tcl"
+set auto_index(MessageBox) "source $dir/dialog.tcl"
+set auto_index(DialogBox) "source $dir/dialog.tcl"
+set auto_index(errormsg) "source $dir/dialog.tcl"
+set auto_index(ErrorMessage) "source $dir/dialog.tcl"
+set auto_index(center_window) "source $dir/dialog.tcl"
+set auto_index(about) "source $dir/dialog.tcl"
+set auto_index(popup_message) "source $dir/dialog.tcl"
+
+
+# filesel.tcl
+
+set auto_index(fileselect) "source $dir/filesel.tcl"
+set auto_index(dirselect) "source $dir/filesel.tcl"
+set auto_index(FileOpen) "source $dir/filesel.tcl"
+set auto_index(FileSave) "source $dir/filesel.tcl"
+set auto_index(GetDirectory) "source $dir/filesel.tcl"
+set auto_index(TempName) "source $dir/filesel.tcl"
+
+set auto_index(tk_getDirectory) "source $dir/tkdir.tcl"
+
+# findfile.tcl
+
+set auto_index(find_file) "source $dir/findfile.tcl"
+
+# frame.tcl
+
+set auto_index(FrameCreate) "source $dir/frame.tcl"
+set auto_index(FrameConfig) "source $dir/frame.tcl"
+set auto_index(FrameGet) "source $dir/frame.tcl"
+set auto_index(FrameLabel) "source $dir/frame.tcl"
+
+# menubar.tcl
+
+set auto_index(menubar_create) "source $dir/menubar.tcl"
+set auto_index(menubar_add) "source $dir/menubar.tcl"
+set auto_index(menubar_delete) "source $dir/menubar.tcl"
+set auto_index(menubar_get) "source $dir/menubar.tcl"
+set auto_index(menubar_state) "source $dir/menubar.tcl"
+
+# tclreg.tcl
+
+set auto_index(tclreg_init) "source $dir/tclreg.tcl"
+set auto_index(tclreg_open) "source $dir/tclreg.tcl"
+set auto_index(tclreg_close) "source $dir/tclreg.tcl"
+set auto_index(tclreg_get) "source $dir/tclreg.tcl"
+set auto_index(tclreg_set) "source $dir/tclreg.tcl"
+
+# tree.tcl
+
+set auto_index(TreeCreate) "source $dir/tree.tcl"
+set auto_index(TreeConfig) "source $dir/tree.tcl"
+set auto_index(TreeDestroy) "source $dir/tree.tcl"
+set auto_index(TreeInsert) "source $dir/tree.tcl"
+set auto_index(TreeDelete) "source $dir/tree.tcl"
+set auto_index(TreeMove) "source $dir/tree.tcl"
+set auto_index(TreeExists) "source $dir/tree.tcl"
+set auto_index(TreeVisible) "source $dir/tree.tcl"
+set auto_index(TreeSet) "source $dir/tree.tcl"
+set auto_index(TreeGet) "source $dir/tree.tcl"
+set auto_index(TreeOpen) "source $dir/tree.tcl"
+set auto_index(TreeClose) "source $dir/tree.tcl"
+set auto_index(TreeToggle) "source $dir/tree.tcl"
+set auto_index(TreeExpand) "source $dir/tree.tcl"
+set auto_index(TreeCollapse) "source $dir/tree.tcl"
+set auto_index(TreeSelectionSet) "source $dir/tree.tcl"
+set auto_index(TreeSelectionGet) "source $dir/tree.tcl"
+set auto_index(TreeAt) "source $dir/tree.tcl"
+set auto_index(TreeFind) "source $dir/tree.tcl"
+set auto_index(TreeSee) "source $dir/tree.tcl"
+set auto_index(TreeEdit) "source $dir/tree.tcl"
+set auto_index(TreeNext) "source $dir/tree.tcl"
+set auto_index(TreePrev) "source $dir/tree.tcl"
+
+
+

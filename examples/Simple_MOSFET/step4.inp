@@ -1,0 +1,36 @@
+#==============================================================================
+# GSS example: N-channle MOSFET simulation with InsulatorContact boundary type
+# Calculate AC sweep.
+#==============================================================================
+
+set DopingScale = 1e19
+
+#------------------------------------------------------------------------------
+# some voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=3
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=3
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=InsulatorContact  ID=ISGATE    Eps=3.9 Thickness=0.2e-6 \
+         WorkFunction=4.7
+boundary Type=OhmicContact      ID=OMSOURCE  Res=0 Cap=0 Ind=0
+boundary Type=OhmicContact      ID=OMDRAIN   Res=100 Cap=0 Ind=0
+boundary Type=OhmicContact      ID=OMSUB     Res=0 Cap=0 Ind=0
+
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   CoreFile=mos_open.cgns       # import data computed by step2
+ATTACH   Electrode=ISGATE Vapp=VGATE
+ATTACH   Electrode=OMDRAIN Vapp=VCC
+
+METHOD   Type = DDML1E   Scheme = Newton  NS=LineSearch LS=GMRES
+SOLVE    Type=STEADYSTATE
+
+METHOD   Type = DDML1AC   LS=GMRES
+SOLVE    Type=ACSWEEP    ACScan=ISGATE IVRecord=OMDRAIN   IVFile=ivac.txt  \
+         FStart=1e5 FMultiple=1.1  FStop = 2e9
+
+

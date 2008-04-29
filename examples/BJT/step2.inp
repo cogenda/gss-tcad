@@ -1,0 +1,40 @@
+#==============================================================================
+# GSS example: NPN Transistor Simulation
+# On this step, we will compute IV curve.
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type
+set Z.Width     = 1	    # device width in Z dimension.
+set LatticeTemp = 3e2       # specify initial temperature of device.
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+# voltage/current source is needed here.
+vsource Type = VDC    ID = GND  Tdelay=0 Vconst=0
+vsource Type = VDC    ID = VCC  Tdelay=0 Vconst=3.0
+vsource Type = VDC    ID = Vb   Tdelay=0 Vconst=0.70
+isource Type = IDC    ID = Ib   Tdelay=0 Iconst=0.002
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact    ID=Base      Res=1000 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Emitter   Res=0    Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Collector Res=1000 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   CoreFile=npn_refined.cgns
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=TFQMR Damping=Potential
+ATTACH   Electrode=Emitter       VApp=GND
+ATTACH   Electrode=Base     	 VApp=Vb   # set voltage(Base) to Vb
+#ATTACH   Electrode=Base     	 IApp=Ib   # set current(Base) to Ib
+
+# compute STEADYSTATE to get a initial value
+SOLVE    Type=STEADYSTATE 		  
+METHOD   Type = DDML1E    Scheme = Newton   NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP     VScan=Collector IVRecord=Collector  IVRecord=Base \
+         IVFile=iv070.txt VStart=0.00 VStep=0.1 VStop=3
+# we get an iv curvy on Vbe=0.7V. 
+# User can change the Vconst of Vb for arbitrary bias voltages.
+
+# we need the result as pre-computed initial value for next step
+EXPORT  CoreFile=bias.cgns	

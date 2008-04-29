@@ -1,0 +1,4 @@
+The solution data may have large related error when it is very small(around 10e-12). 
+For example, the value of electrode current under zero or very low bias is unreliable. 
+
+The graphic plot may halt if data differs very little (to float precision).  

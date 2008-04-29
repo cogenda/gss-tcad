@@ -1,0 +1,52 @@
+#==============================================================================
+# GSS example: PN Diode simulation
+# On this step, we will calculate the forward IV curve by voltage and current 
+# sewwps. Here we use lattice temperature corrected solver.
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+set DopingScale = 1e16
+
+#------------------------------------------------------------------------------
+# no voltage source is needed.
+
+#------------------------------------------------------------------------------
+# specify boundary condition. Must give heat transfer rate here.
+boundary Type=OhmicContact   ID=Anode   Res=0 Cap=0 Ind=0
+boundary Type=OhmicContact   ID=Cathode Res=0 Cap=0 Ind=0 Heat.Transfer=1e3
+
+#------------------------------------------------------------------------------
+# Import CGNS file generated at first step
+IMPORT   CoreFile=pn.cgns 
+METHOD   Type=DDML2   Scheme=Newton  NS=LineSearch LS=GMRES
+PLOT     Variable=DeviceMesh 
+SOLVE    Type=STEADYSTATE
+
+#------------------------------------------------------------------------------
+# DC sweep forward
+METHOD   Type = DDML2   Scheme = Newton  NS=LineSearch LS=TFQMR
+
+# sweep with voltage boundary condition
+SOLVE    Type=DCSWEEP  VScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivfp1.txt VStart=0 VStep=1e-2 VStop=0.6
+# sweep with current boundary condition
+SOLVE    Type=DCSWEEP  IScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivfp2.txt IStart=0.02 IStep=1e-2 IStop=1.0
+PLOT     Variable=Temperature Measure=Linear Resolution=RES.Middle
+
+#------------------------------------------------------------------------------
+# DC sweep backward
+IMPORT   CoreFile=pn.cgns 
+METHOD   Type=DDML2E   Scheme=Newton  NS=Basic LS=GMRES ImpactIonization=On
+SOLVE    Type=DCSWEEP  VScan=Anode    IVRecord=Anode IVRecord=Cathode \
+         IVFile=ivb.txt VStart=0 VStep=-0.5 VStop=-80
+
+PLOT     Variable=ElecDensity Resolution=RES.Middle    AzAngle=40  ElAngle=40
+PLOT     Variable=HoleDensity Resolution=RES.Middle    AzAngle=40  ElAngle=40
+PLOT     Variable=Potential   Resolution=RES.Middle    AzAngle=40  ElAngle=40
+PLOT     Variable=EFieldX     Resolution=RES.Middle    AzAngle=40  ElAngle=40
+PLOT     Variable=EFieldY     Resolution=RES.Middle    AzAngle=40  ElAngle=40
+PLOT     Variable=Temperature Resolution=RES.Middle    AzAngle=40  ElAngle=40
+EXPORT   CoreFile=b70.cgns
+

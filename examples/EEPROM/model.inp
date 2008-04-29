@@ -1,0 +1,58 @@
+#==============================================================================
+# GSS example: EEPROM Simulation
+#==============================================================================
+
+MESH     Type=GSS   ModelFile=eeprom.cgns Triangle="pzADY"
+XMESH    WIDTH=0.4  H1=0.1   H2=0.1
+XMESH    WIDTH=0.4  H1=0.1   H2=0.025
+XMESH    WIDTH=0.25 H1=0.025 H2=0.05
+XMESH    WIDTH=0.25 H1=0.05  H2=0.025
+XMESH    WIDTH=0.5  H1=0.025 H2=0.1
+
+YMESH    DEPTH=0.050 N.SPACES=1 Y.TOP=0.125
+YMESH    DEPTH=0.040 N.SPACES=2
+YMESH    DEPTH=0.025 N.SPACES=2
+YMESH    DEPTH=0.010 N.SPACES=1
+YMESH    DEPTH=2.5 H1=0.01 RATIO=1.30
+
+ELIMINATE Direction=COLUMNS X.MIN=0.6 X.MAX=1.5 Y.TOP=-1.0
+
+REGION Label=Silicon  Material=Si
+REGION Label=Oxide    Y.BOTTOM=0.0 Material=SiO2
+REGION Label=Drain    X.MIN=1.5 Y.TOP=0.125 Y.BOTTOM=0.0 Material=Elec
+REGION Label=Gate     X.MIN=0.5 X.MAX=1.4   IY.MAX=1     Material=Elec
+REGION Label=Source   X.MAX=0.3 Y.TOP=0.125 Y.BOTTOM=0.0 Material=Elec
+REGION Label=Flt_Gate X.MIN=0.5 X.MAX=1.4 IY.MIN=3 IY.MAX=5 Material=PolySi
+SEGMENT Label=Substrate Location=BOTTOM
+
+# Define profiles
+PROFILE Ion=Acceptor N.PEAK=6E16 Type=Uniform Y.TOP=0 Y.BOTTOM=-3.75 X.MIN=0.0 X.MAX=1.8
+PROFILE Ion=Donor    N.PEAK=2E20 Type=Gauss   Y.TOP=0 Y.BOTTOM=0.0 Y.JUNCTION=-0.632 X.MIN=0.0 X.MAX=0.74 X.CHAR=3.2951E-2
+PROFILE Ion=Donor    N.PEAK=2E20 Type=Gauss   Y.TOP=0 Y.BOTTOM=0.0 Y.JUNCTION=-0.332 X.MIN=1.4 X.MAX=1.8  X.CHAR=3.2951E-2
+
+set Carrier     = pn        
+set Z.width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 2e20
+
+CONTACT   Type = GateContact        ID = Gate        WorkFunction=4.7
+CONTACT   Type = FloatMetal         ID = Flt_Gate    QF=-1e-15 #the floating gate is charged
+boundary  Type = OhmicContact       ID = Substrate   Res=0 Cap=0 Ind=0
+boundary  Type = InsulatorInterface ID = IF_Oxide_to_Silicon QF=0
+
+PLOT     Variable=DeviceMesh
+REFINE   Variable=Doping Measure=SignedLog Dispersion=3 Triangle="praDz" 
+PLOT     Variable=DeviceMesh
+
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=GMRES
+# compute equilibrium state
+SOLVE    Type = TRANSIENT TStart = 0 TStep=2e-13  TStop = 6e-12
+SOLVE    Type=EQUILIBRIUM
+#PLOT     Variable=Na        Resolution=RES.High    AzAngle=120  ElAngle=60
+#PLOT     Variable=Nd        Resolution=RES.High    AzAngle=120  ElAngle=60
+PLOT     Variable=Potential Resolution=RES.High    AzAngle=240  ElAngle=20
+PLOT     Variable=ElecDensity      Resolution=RES.High    AzAngle=240  ElAngle=20
+
+EXPORT   CoreFile = eeprom_init.cgns
+END
+

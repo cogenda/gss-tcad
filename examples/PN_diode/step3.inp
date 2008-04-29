@@ -1,0 +1,37 @@
+#==============================================================================
+# GSS example: PN Diode simulation
+# advanced topic:we will compute transient reaction of a pn diode with
+# external resistance and capacitance
+# The auto time step control is on. Use BDF2 scheme.
+# for running it, use "gss step3.inp"
+#==============================================================================
+ASSIGN _fenq = 1e6  # 1MHz
+
+set Carrier     = pn        # specify carrier type
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+
+#------------------------------------------------------------------------------
+# voltage sources.
+vsource Type = VDC    ID = GND  Tdelay=0 Vconst=0
+vsource Type = VDC    ID = VCC  Tdelay=0 Vconst=0.5
+vsource Type = VSIN   ID = Vs   Tdelay=0.1/_fenq Vamp=1.0 Freq=_fenq 
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact      ID = Anode   Res=1000 Cap=0 Ind=0
+boundary Type = OhmicContact      ID = Cathode Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# import equilibrium state result computed in step 1
+IMPORT   CoreFile=pn.cgns
+
+ATTACH   Electrode=Cathode  VApp=GND
+ATTACH   Electrode=Anode    VApp=VCC VApp=Vs                    
+
+METHOD   Type = DDML1E Scheme = Newton NS=LineSearch LS=GMRES 
+SOLVE    Type=STEADYSTATE
+
+METHOD   Type = DDML1E Scheme = Newton NS=Basic LS=GMRES  maxiteration=10
+SOLVE    Type=TRANSIENT     IVRecord=Anode   IVFile=iv.txt  ODE.Formula=BDF2\
+         TStart = 0  TStep = 1.0/_fenq/50   TStop = 2.1*1.0/_fenq
+END

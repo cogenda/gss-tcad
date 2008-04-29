@@ -1,0 +1,8 @@
+不清楚的地方
+
+在异质结器件的TIF文件中出现comp栏
+
+后面是8个浮点数
+怀疑其中两个 region_index direction 应该是整数
+
+comp region_index xmin xmax ymin ymax direction initvalue increase

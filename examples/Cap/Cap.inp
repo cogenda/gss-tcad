@@ -1,0 +1,45 @@
+#==============================================================================
+# GSS example: AC small signal sweep to a SiO2 capacitance
+#==============================================================================
+
+# Create an initial simulation mesh
+# The length and width are both 1um 
+MESH     Type=GSS   ModelFile=cap.cgns Triangle="pzA"
+XMESH    WIDTH=1.0  N.SPACES=1 
+YMESH    DEPTH=1.0  N.SPACES=1
+
+# Region material set to SiO2
+REGION    Label=SiO2    Material=SiO2
+SEGMENT   Label=Elec1   Location=TOP
+SEGMENT   Label=Elec2   Location=BOTTOM
+
+set Z.width = 1	    	    # cap width in Z dimension is 1um 
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+
+
+#------------------------------------------------------------------------------
+# voltage sources.
+vsource Type = VDC    ID = GND  Tdelay=0 Vconst=0.0
+vsource Type = VDC    ID = VCC  Tdelay=0 Vconst=1.0
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=GateContact      ID=Elec1   WorkFunction=4.7 Res=1000 Cap=0 Ind=0
+boundary Type=GateContact      ID=Elec2   WorkFunction=4.7 Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# Here, use the DDML1 solver to compute a SiO2 region.
+# It seems that LineSearch method can not convergince, 
+# However, TrustRegion method works.
+#PLOT     Variable=Mesh
+METHOD   Type = DDML1 NS=TrustRegion
+ATTACH   Electrode=Elec1 Vapp=VCC
+SOLVE    Type=STEADYSTATE
+#PLOT     Variable=Potential Resolution=RES.Middle    AzAngle=240  ElAngle=20
+
+# Use DDML1AC to get the frequency response to this capacitance.
+# The result shows exactly march to analytic value get from cap.cc
+METHOD   Type = DDML1AC   LS=BCGS
+SOLVE    Type=ACSWEEP    ACScan=Elec1 IVRecord=Elec1   IVRecord=Elec2 IVFile=ivac.txt  \
+         FStart=1e6 FMultiple=1.1  FStop = 1e7
+END

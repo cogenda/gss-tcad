@@ -1,0 +1,36 @@
+#==============================================================================
+# GSS benchmark: 90nm N-Channel MOSFET
+#==============================================================================
+
+#------------------------------------------------------------------------------
+set Carrier     = pn        
+set Z.width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 1e20
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+CONTACT  Type = OhmicContact        ID = source4 Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact        ID = drain5  Res=0 Cap=0 Ind=0
+CONTACT  Type = GateContact         ID = Polysili1   Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact        ID = back      Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+IMPORT   ModelFile=90nm.cgns
+PLOT     Variable=Mesh
+#"PLOTMESH" offers more powerful function. But only valid on X11 system
+#PLOTMESH
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=LU Damping=Potential
+# compute equilibrium state
+SOLVE    Type=EQUILIBRIUM
+
+PLOT     TIFF.OUT=Na.tiff Variable=Na        Resolution=RES.High    AzAngle=120  ElAngle=60
+PLOT     Variable=Nd        Resolution=RES.High    AzAngle=120  ElAngle=60
+PLOT     Variable=Potential Resolution=RES.High    AzAngle=240  ElAngle=20
+PLOT     Variable=ElecDensity      Resolution=RES.High    AzAngle=240  ElAngle=20
+PLOT     Variable=EFieldX   Resolution=RES.High    AzAngle=40   ElAngle=20
+PLOT     Variable=EFieldY   Resolution=RES.High    AzAngle=40   ElAngle=20
+
+EXPORT   CoreFile=NMOS.init.cgns
+END

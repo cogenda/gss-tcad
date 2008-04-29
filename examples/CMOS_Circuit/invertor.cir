@@ -1,0 +1,39 @@
+CMOS Invertor mix-type transient simulation
+
+VCC    P_VCC  0       5V 
+VIN    P_R2   0       0V (PULSE 0 5 0n 20p 20p 2n 4n)
+R2     P_R2   N_R2               100
+
+* P channel compact load transistor
+* MA1 P_R1  N_R2  P_VCC P_VCC MPM 
+* + PS=8u PD=8u AS=6p AD=6p W=3u   L=1.25u
+* N channel compact load transistor
+* MA2 P_R1  N_R2  0 0 MNM 
+* + PS=5u PD=5u AS=2p AD=2p W=1.5u L=1.25u
+
+* numerical PMOS
+NPMOS1 P_R1=PDrain  N_R2=PGATE  P_VCC=PSource   P_VCC=PSubstrate  PMOS
+* numerical NMOS
+NNMOS1 P_R1=NDrain  N_R2=NGATE  0=NSource   0=NSubstrate  NMOS
+R1     P_R1 P_C1 100
+C1     P_C1 0    20f 
+
+* P channel compact load transistor
+MB1 VOUT P_C1 P_VCC P_VCC MPM PS=8u PD=8u AS=6p AD=6p W=3u   L=1.25u
+* N channel compact load transistor
+MB2 VOUT P_C1 0 0       MNM PS=5u PD=5u AS=2p AD=2p W=1.5u L=1.25u
+
+* Models to use for the compact MOS transistors
+.MODEL MNM NMOS LEVEL=2 TOX=1.5e-7 NSUB=3E15 LD=.15u UO=600
++ VMAX=1E7 XJ=.3 JS=1E-15 VTO=.7
+.MODEL MPM PMOS LEVEL=2 TOX=1.5e-7 NSUB=3E15 LD=.15u
++ XJ=.3 UO=300 JS=1E-15 VMAX=5E6 VTO=-.7
+
+* Models for numerical MOS transistors
+.MODEL NMOS NDEV  remote=localhost port=17001
+.MODEL PMOS NDEV  remote=localhost port=17002
+
+.OPTION acct itl2=100 icstep=2e12
+.TRAN 1ps 9ns 
+.plot tran v(vout)
+.END

@@ -1,0 +1,66 @@
+#==============================================================================
+# GSS example: NPN Transistor Simulation
+# On this step, we will create the initial mesh, do some refine 
+# and compute equilibrium state.
+#==============================================================================
+
+MESH      Type=GSS   ModelFile=npn.cgns  Triangle="pzA"
+XMESH     WIDTH=6.0  H1=0.250
+YMESH     DEPTH=0.5  H1=0.125
+YMESH     DEPTH=1.5  H1=0.125  H2=0.2
+REGION    Label=Si Material=Si
+
+# Electrodes
+SEGMENT    Label=Base     X.MIN=1.25  X.MAX=2.00  Location=TOP
+SEGMENT    Label=Emitter  X.MIN=2.75  X.MAX=4.25  Location=TOP
+SEGMENT    Label=Collector  Location=BOTTOM
+
+# doping profile
+PROFILE   Ion=Donor     Type=Uniform N.PEAK=5e15  Y.TOP=0 Y.BOTTOM=-2.0 \
+          X.MIN=0.0     X.MAX=6.0
+PROFILE   Ion=Acceptor  Type=Gauss      N.PEAK=6e17  \
+          Y.TOP=0       Y.BOTTOM=-0.35  Y.CHAR=0.16  \
+          X.MIN=1.25    X.MAX=4.75      X.CHAR=0.12
+PROFILE   Ion=Acceptor  Type=Gauss      N.PEAK=4e18  \
+          Y.TOP=0       Y.BOTTOM=0      Y.CHAR=0.16  \
+          X.MIN=1.25    X.MAX=4.75      X.CHAR=0.12
+PROFILE   Ion=Donor     Type=Gauss      N.PEAK=7e19  \ 
+          Y.TOP=0       Y.BOTTOM=0      Y.CHAR=0.17  \
+          X.MIN=2.75    X.MAX=4.25      X.CHAR=0.1275
+PROFILE   Ion=Donor     Type=Gauss      N.PEAK=1e19  \
+          Y.TOP=-2      Y.BOTTOM=-2     Y.CHAR=0.27  \
+          X.MIN=0.0     X.MAX=6.0
+
+set Carrier     = pn        
+set Z.Width     = 1	    
+set LatticeTemp = 3e2       
+set DopingScale = 1e20
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact    ID=Base      Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Emitter   Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Collector Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+PLOT     Variable=Mesh
+#refine by doping
+REFINE   Variable=Doping Measure=SignedLog Dispersion=3  Triangle="praDzQ" 
+PLOT     Variable=Mesh
+#refine by doping again
+REFINE   Variable=Doping Measure=SignedLog Dispersion=3  Triangle="praDzQ" 
+#"PLOTMESH" offers more powerful function. But only valid on X11 system
+PLOTMESH 
+
+#compute equilibrium state
+METHOD   Type = DDML1   Scheme = Newton   NS=LineSearch LS=TFQMR Damping=Potential
+SOLVE    Type=EQUILIBRIUM 
+PLOT     Variable=Nd            Resolution=RES.High   AzAngle=310  ElAngle=50
+PLOT     Variable=Na            Resolution=RES.High   AzAngle=310  ElAngle=50
+PLOT     Variable=Doping        Resolution=RES.High   AzAngle=250  ElAngle=65
+PLOT     Variable=ElecDensity   Resolution=RES.High   AzAngle=310  ElAngle=50
+PLOT     Variable=HoleDensity   Resolution=RES.High   AzAngle=310  ElAngle=50
+PLOT     Variable=Potential     Resolution=RES.High   AzAngle=310  ElAngle=50
+# export mesh and solution
+EXPORT  CoreFile=npn_refined.cgns

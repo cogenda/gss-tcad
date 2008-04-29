@@ -1,0 +1,37 @@
+@SET_MAKE@
+
+GSS_DIR  = @GSS_DIR@
+
+# compiler
+CC       = @CC@
+CXX      = @CXX@
+LINK     = @CXX@
+
+
+CFLAGS   = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+
+LDFLAGS  = @LDFLAGS@
+
+# lex and yacc
+YACC     = @YACC@
+LEX      = @LEX@ 
+LEXLIB   = @LEXLIB@
+
+# executable file extention
+EXE     = @EXEEXT@
+
+# CGNS head file and library
+CGNSDIR = @CGNSDIR@
+CGNSINC = -I$(CGNSDIR)/include
+CGNSLIB = -L$(CGNSDIR)/lib -lcgns
+
+# X11 system head file and library
+HAVE_X11 = @HAVE_X11@
+X11INCS = @X11INCS@
+X11LIBS = @X11LIBS@
+
+INCLUDE   =  -I$(GSS_DIR) -I$(GSS_DIR)/src/include  $(CGNSINC) $(X11INCS) 
+CLIBS     =  @LIBS@ $(LEXLIB) $(CGNSLIB) $(X11LIBS)
+
+

@@ -1,0 +1,42 @@
+#==============================================================================
+# NMOS Source-Drain IV curve calculation
+#==============================================================================
+
+set Carrier     = pn
+set Z.width     = 1
+set LatticeTemp = 3e2
+set DopingScale = 2e20
+
+#------------------------------------------------------------------------------
+# voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=0.1
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=3.0
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary  Type = OhmicContact        ID = source Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = drain  Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = gate   Res=0 Cap=0 Ind=0
+boundary  Type = OhmicContact        ID = bulk   Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS Region=Si2 mobility=Lombardi
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+# set gate voltage to 3V
+IMPORT   CoreFile=NMOS.init.cgns
+ATTACH   Electrode=drain             VApp=VCC
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=LU
+SOLVE    Type=STEADYSTATE
+EXPORT   CoreFile=t1.cgns
+METHOD   Type = EBML3E   Scheme = Newton  NS=Basic LS=LU
+SOLVE    Type=DCSWEEP VScan=gate  IVRecord=gate \
+         IVRecord=drain \
+         IVFile=iv1n.txt VStart=0 VStep=0.025 VStop=1.0
+
+PLOT     Variable=Temperature Resolution=RES.High    AzAngle=40  ElAngle=40
+PLOT     Variable=Potential   Resolution=RES.High    AzAngle=40  ElAngle=40
+END

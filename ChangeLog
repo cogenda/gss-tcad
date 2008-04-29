@@ -1,0 +1,317 @@
+2008-03-10 Gong Ding <gdiso@ustc.edu>
+  * src/solver/ddm2e/semiequ2.cc:        Add Fermi statistics support  
+  * src/solver/mix2/semiequ2mix.cc:      Add Fermi statistics support  
+
+2008-03-09 Gong Ding <gdiso@ustc.edu>
+  * src/solver/mix1/semiequ1mix.cc:      Fix the bug of ohmic load function when Fermi statistics is used.
+  
+2008-03-02 Gong Ding <gdiso@ustc.edu>
+  Add LTE based auto time step control to DDML2E and EBML3E. 
+  The damping strategy is also modified.
+  * src/solver/ddm2e/ddm_nt2e.cc: the modification is the same as ddm_nt1e.cc
+  * src/solver/ebm3e/ebm_nt3e.cc: 
+
+2008-02-29 Gong Ding <gdiso@ustc.edu>
+  * src/solver/ddm1e/ddm_nt1e.cc: Add LTE based auto time step control to DDML1E.
+
+2008-02-26 Shen Chen <ShenChen@nus.edu.sg> 
+  * src/solver/ddm1e/ddm_nt1e.cc: improved the Newton damping, now the convergence is faster and more stable.
+
+2008-02-25 Gong Ding <gdiso@ustc.edu>
+  Do more about DG-DDM. DCSWEEP support multi-electrode voltage scan which is useful for
+  Double-Gate MOS.
+  
+2008-02-22 Gong Ding <gdiso@ustc.edu>
+  The bug for Si-SiO2 interface of DG solver is fixed! Thank goodness, DG-DDM works!
+
+2008-02-16 Gong Ding <gdiso@ustc.edu>
+  Fixed a bug about transient/dcsweep output header.
+
+2008-02-14 Gong Ding <gdiso@ustc.edu>
+  Rewrite PMI.h, pass parameters use (const Type &) format.
+
+2008-01-29 Gong Ding <gdiso@ustc.edu>
+  Fixed a memory bug on METHOD statement parsing. Rewrite material database by AD.
+  With the help of AD, material database is really simple for implemention.
+
+2008-01-24 Gong Ding <gdiso@ustc.edu>
+  Rewrite EBM solver by AD.    
+
+2008-01-17 Gong Ding <gdiso@ustc.edu>
+  Fixed a bug about loading PMIS. Add UMFPACK LU solver support to GSS.     
+
+2008-01-16 Gong Ding <gdiso@ustc.edu>
+  Improve the mesh plot function. Add parameters for convergence criteria. 
+  Support Double-Gate MOS as required by Gajanan <gajanandessai@rediffmail.com>.
+  
+2008-01-10 Gong Ding <gdiso@ustc.edu>
+  Drop old DDML1 and DDML2 solver. 
+  Rewrite Jacobian matrxi routine with automatically differentitation.  AD method greatly improved 
+  development efficient but slow down the code by about 30% 
+  Set version to gss-0.46
+
+2007-12-28 Gong Ding <gdiso@ustc.edu>
+  Add potential damping to DDML1E. It can help convergence when basic newton method is used, very nice.
+
+2007-12-26 Gong Ding <gdiso@ustc.edu>
+  Add InP, InAs, InSb, InN and HgCdTe to material database
+
+2007-12-20 Gong Ding <gdiso@ustc.edu>
+  Support Fermi-Dirac statistics for DDML1E solver.
+
+2007-12-10 Gong Ding <gdiso@ustc.edu>
+  Add Optical absobing function to each material.
+
+2007-12-05 Gong Ding <gdiso@ustc.edu>
+  Successfully calculated ggnmos snap back curve. But still something to do with TRACE. 
+    
+2007-12-04 Gong Ding <gdiso@ustc.edu>
+  Add Bank & Rose Newton damping to DDML1E solver. However, it seems no help to convergence.
+
+2007-12-03 Gong Ding <gdiso@ustc.edu>
+  Use PETSC option "-snes_type test -mat_fd_type ds " to check the Jacobian matrix of all the solver.
+  It seems DDML1 has exact hand writing Jacobian matrix.
+  Jacobian matrix for DDML1E(without EdotJ) DDML2/E just has very little difference with finite differenc edition.
+  Jacobian matrix for DDML1E(with EdotJ)/EBML3E  has a larger error for which I think caused by machine round-off problem.
+
+2007-12-02 Gong Ding <gdiso@ustc.edu>
+  Change {PMIS material=<s> mobility=<s>} to {PMIS region=<s> mobility=<s> II.model=<s>}
+  User can set different model to individual region.
+  Add PROBE command for recording field data.
+  Limit the retry times of DCSWEEP and TRANSIENT simulation to 8.
+
+2007-11-27 Gong Ding <gdiso@ustc.edu>
+  Support EdotJ model for Impact Ionization calculation of DDML1E.
+
+2007-11-09 Gong Ding <gdiso@ustc.edu>
+  Add IV trace function to DDML2E (Still bugs! I'll fix it someday).
+
+2007-11-07 Gong Ding <gdiso@ustc.edu>
+  The mesh generator support ellipse region. For photon crystal simulation.  
+
+2007-11-05 Gong Ding <gdiso@ustc.edu>
+  Since DG-DDM still has problems with Si-SiO2 interface, 
+  I have to drop it. Oh, it cost me too much time...
+
+2007-09-06 Gong Ding <gdiso@ustc.edu>
+  A stupid bug of DG-DDM solver which causes incorrect current was fixed.
+
+2007-08-05 Gong Ding <gdiso@ustc.edu>
+  Try to support Density-Gradient Method, the property for simulating advanced 25nm MOSFET.  
+
+2007-07-25 Gong Ding <gdiso@ustc.edu>
+  Add HP and Lombardi mobility model to Silicon, Hypertang mobility model to GaAs.
+  Do 1um, 0.35um and 90nm NMOS benckmark test. 
+
+2007-07-10 Gong Ding <gdiso@ustc.edu>
+  Add the support of electrode region during simulation. Many changes to BC.
+
+2007-06-26 Gong Ding <gdiso@ustc.edu>
+  Support charge boundary. Add EEPROM example.
+
+2007-06-10 Gong Ding <gdiso@ustc.edu>
+  Add Template Tcl script for fast building MOS and BJT model.
+
+2007-05-11 Xuan Chun <xiaomoyu505@163.com>
+  Add the stk bc and insulator bc for MIX2 solver. 
+
+2007-05-10 Xuan Chun <xiaomoyu505@163.com>
+  Add the temperature. The circuit/device mixed simulation MIX2 works. 
+  Reserve the om bc,calculating PN to test MIX2 Solver.
+
+2007-05-21 Gong Ding <gdiso@ustc.edu>
+  Add energy balance solver EBML3E. GSS now support MOSFET with channel length down to 100nm. 
+
+2007-05-09  Gong Ding <gdiso@ustc.edu>
+  Set version to gss-0.45 
+
+2007-05-03  Gong Ding <gdiso@ustc.edu>
+  Add IV Trace function to DDML1E solver. Fixed some bugs about Jacobian matrix of DDML1E.
+ 
+2007-04-22  Gong Ding <gdiso@ustc.edu>
+  Test Mixed-Type Solver. Fix some bugs. 
+
+2007-04-08  Gong Ding <gdiso@ustc.edu>
+  The circuit/device mixed simulation works! Thanks to the developers of NGSPICE. They help me much.  
+
+2007-03-29  Gong Ding <gdiso@ustc.edu>
+  Try to support GSS/NGSPICE mixed simulation. Add a numerical device model to NGSPICE. 
+
+2007-03-17  Gong Ding <gdiso@ustc.edu>
+  Improved convergince test.
+
+2007-03-15  Gong Ding <gdiso@ustc.edu>
+  Add ps and tiff image dump features to graphic library. 
+
+2007-03-13  Gong Ding <gdiso@ustc.edu>
+  Support schottky barrier lowering.
+
+2007-03-03  Gong Ding <gdiso@ustc.edu>
+  Support inner connect, an ohmic electrode short connect to another ohmic electrode.
+  Although it becomes meaningless when mix-type solver done. 
+
+2007-02-26  Gong Ding <gdiso@ustc.edu>
+  Fixed 2 mistakes about current function invoked by DDML2/DDML2E, although final result differs very little.
+
+2007-01-22  Gong Ding <gdiso@ustc.edu>
+  Support band gap narrowing due to heavy doping. 
+
+2007-01-21  Gong Ding <gdiso@ustc.edu>
+  DDML1E and DDML2E support band-band tunneling. Add zener diode example.
+
+2007-01-15  Gong Ding <gdiso@ustc.edu>
+  DDML1E and DDML2E support transvers field dependent mobility.
+  Add Lucent mobility model to material database.
+
+2006-12-14  Gong Ding <gdiso@ustc.edu>
+  Try to support float point number with long double precision.
+
+2006-11-22  Gong Ding <gdiso@ustc.edu>
+  AC sweep solver works. Set version to GSS-0.43
+
+2006-11-20  Gong Ding <gdiso@ustc.edu>
+  Do improvement and bug fix about AC sweep solver.
+
+2006-11-16  Gong Ding <gdiso@ustc.edu>
+  Limited support of AC sweep. Set version to gss-0.42 build 4219.
+
+2006-10-15  Gong Ding <gdiso@ustc.edu>
+  DDML2E fully support Impact Ionization. Set version to gss-0.42 build 4218.
+
+2006-10-13  Gong Ding <gdiso@ustc.edu>
+  Add enhanced DDML2 (DDML2E) solver.
+
+2006-10-05  Gong Ding <gdiso@ustc.edu>
+  Add a poisson solver, prepare for Gummel method and HDM.
+
+2006-09-19  Gong Ding <gdiso@ustc.edu>
+  Add enhanced DDML1 (DDML1E) solver. Fully support Impact Ionization and high field mobility.
+
+2006-09-11  Gong Ding <gdiso@ustc.edu>
+  DDML2 solver support hetrojunction now.
+
+2006-06-26 Gong Ding <gdiso@ustc.edu> 
+  The support of heterojunction seems working now.
+  meet float point number precision problem in single carrier device. when the
+  concentration of electron have got convergince and program stops,
+  the concentration of hole may still have a large error.
+
+2006-06-18  Gong Ding <gdiso@ustc.edu>
+  Limited support of background mesh. Zhang Xianghua will do The FEM solver.
+  Try to add support of compound materials. Enlarge material database.
+
+2006-06-15  Gong Ding <gdiso@ustc.edu>
+  Try to support background mesh. A bug in refine function fixed.
+
+2006-06-10  Gong Ding <gdiso@ustc.edu>
+  GSS-0.42. Many bugs fixed.
+
+2006-05-18  Gong Ding <gdiso@ustc.edu>
+  Add auto configure script. But still very limited functions.
+
+2006-05-16  Gong Ding <gdiso@ustc.edu>
+  GSS now fully support PISCES-like MESH functions.
+
+2006-05-14  Gong Ding <gdiso@ustc.edu>
+  Fixed a bug about mesh generator.
+
+2006-05-11  Gong Ding <gdiso@ustc.edu>
+  Rewrite input parser. Now the keyword and parameter name are case insensitive.
+
+2006-04-22  Gong Ding <gdiso@ustc.edu>
+  The mesh generator and doping functions seems ok. Now GSS becomes the full functional simulator.
+  Set version to gss-0.41 build 4123.
+
+2006-04-20  Gong Ding <gdiso@ustc.edu>
+  Add doping profile card.
+
+2006-04-17  Gong Ding <gdiso@ustc.edu>
+  Design a mesh generator for GSS. a careless mistake for current boundary condition fixed.
+
+2006-03-25  Gong Ding <gdiso@ustc.edu>
+  Improved convergince rate of DDM L2 by fix a bug about jacobian matrix.
+  No problem remained for DDM L2 now.
+
+2006-03-21  Gong Ding <gdiso@ustc.edu>
+  gss-0.41 build 4115, DDM solver level 2 seems work now.
+
+2006-03-17  Gong Ding <gdiso@ustc.edu>
+  Try to reduce condition number of Jacobian matrix.
+
+2006-03-13  Gong Ding <gdiso@ustc.edu>
+  Return to work. Reset boundary mark of zone nodes.
+
+2006-02-28  Gong Ding <gdiso@ustc.edu>
+  Reorganize solution data structure. set electrostatic potential(the solution
+  to poisson's equation) as intrinsic Fermi potential plus band parameter theta.
+
+2006-02-24  Gong Ding <gdiso@ustc.edu>
+  Lattice temperature solver. The convergince is poor... needs improvement.
+  switch to PETSC 2.3.1 some small bugs fixed.
+
+2006-02-18  Gong Ding <gdiso@ustc.edu>
+  Use valgrind to check my code. Fixed some memory problems.
+  Set gss version to gss-0.41 build 4102.
+
+2006-02-17  Gong Ding <gdiso@ustc.edu>
+  Since DDM level 2 needs more parameters,
+  Tcl script runs too slow to my needs.
+  I have to hardcode some Tcl procedure by c.
+
+2006-02-15  Gong Ding <gdiso@ustc.edu>
+  Besides LU factorization, BCGS and GMRES are available to linear solver.
+
+2006-02-10 Gong Ding <gdiso@ustc.edu>
+  Add BDF2 scheme for time dependent calculation.
+  20 points are enough for sampling a sine period.
+  Yeha, I think the body of DDM solver level 1 is finished.
+
+2006-02-09 Gong Ding <gdiso@ustc.edu>
+  Current boundary condition for Schottky electrode.
+
+2006-02-08 Gong Ding <gdiso@ustc.edu>
+  Add TIF output function. The output file can be opened by TIFTOOL
+  and changed to cgns file again.
+
+2006-01-18 Gong Ding <gdiso@ustc.edu>
+  Set pseudo-time method by petsc TS to achieve steady-state solution.
+  Can this time-consuming method get better convergince?
+
+2006-01-01 Gong Ding <gdiso@ustc.edu>
+  Upgrade the least-squares electrical field calculation code.
+
+2005-12-31 Gong Ding <gdiso@ustc.edu>
+  Upgrade 3D graphic display.
+
+2005-12-27 Gong Ding <gdiso@ustc.edu>
+  TIFTOOL: A GUI post-processer for Medici TIF file.
+
+2005-12-23 Gong Ding <gdiso@ustc.edu>
+  Current boundary condition for om electrode.
+
+2005-12-22 Gong Ding <gdiso@ustc.edu>
+  Speed up DDM solver level 1 by hard coding Recombination term.
+
+2005-12-19 Gong Ding <gdiso@ustc.edu>
+  Difference approximate to recombination item in jacobian matrix.
+  The convergence rate of MOSFET and Schottky diode greatly improved.
+
+2005-12-18 Gong Ding <gdiso@ustc.edu>
+  Spent 3 days on searching a stupid mistake.
+
+2005-12-13 Gong Ding <gdiso@ustc.edu>
+  Isolator interface
+
+2005-12-09 Gong Ding <gdiso@ustc.edu>
+  Current equation of schotty boundary, high field mobility rate.
+
+2005-12-08 Gong Ding <gdiso@ustc.edu>
+  Impact ionization...
+
+2005-12-07 Gong Ding <gdiso@ustc.edu>
+  New flexible material database finished. Write in Tcl.
+
+2005-12-05 Gong Ding <gdiso@ustc.edu>
+  I completely droped old HDM solver in this 0.4x version. The new hydrodynamic
+  method which mainly focus on  quantum mechanic will be introduced in a
+  separated code for nanometer device simulation.

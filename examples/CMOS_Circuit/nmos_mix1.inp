@@ -1,0 +1,35 @@
+#==============================================================================
+# GSS mix-type simulation file for 1.5 Micron N-Channel MOSFET
+#==============================================================================
+
+set Carrier     = pn
+set Z.width     = 2
+set LatticeTemp = 3e2
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+# voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=5
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorInterface ID=IF_NOxide_to_NSilicon QF=0
+boundary Type = GateContact        ID=NGate        WorkFunction=4.17
+boundary Type = OhmicContact       ID=NSubstrate   Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID=NSource Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID=NDrain  Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS region=Si mobility=Lucent
+
+#------------------------------------------------------------------------------
+# IMPORT NMOS MODEL
+IMPORT   CoreFile=nmos_init.cgns
+METHOD   Type = DDML1MIX   Scheme = Newton  NS=Basic LS=GMRES ServerPort=17001
+SOLVE    
+
+END
+

@@ -1,0 +1,54 @@
+How to compile GSS
+
+You should install some important libraries first. 
+        1 libtiff, most linux distributions have this library already been installed.       
+	2 petsc-2.3.3, since petsc often changes its function names, you must have this version. 
+	3 cgnslib-2.5-1, earlier version has memory leak problem.  
+	4 (optional) When mixed-type simulation is required, you should get lateset NGSPICE (from CVS, not rework-17)
+	  and configure it with --enable-experimental --enable-ndev arguments.  
+Note 1: 
+petsc must be configured with --with-clanguage=cxx to support c++ call 
+and --with-mpi=0 to disable parallel mechanism. I highly recommend to 
+compile a BLAS/LAPACK, since the system's rounting may cause convergence 
+problem.
+
+Note 2:
+GSS can be compiled with long double float number (default is double) 
+to achieve better convergence rate and more accurate result. 
+To support long double, configure PETSC with additional arguments:
+--with-precision=longdouble --download-c-blas-lapack=1
+PETSC will compile a special version of Blas/Lapack for long double. 
+
+
+Make sure your compiler works, flex (version 2.5.4, no 2.5.3x) and bison are also needed.
+
+Note:
+  Although gcc 3.3/3.4/4.1 works, but vendor compiler (such as Intel icc on PC) 
+works much faster (50% faster than gcc). That mainly because the math library 
+used by gcc compute pow(x,y) in an inefficient way but icc seems using a hardware
+float point arithmatic accelerator.     
+
+You need to set environment GSS_DIR point to the directory of gss.
+for example, under bash, 
+	export  GSS_DIR=/home/gdiso/gss-0.46
+In the directory of gss, type
+	configure	
+	make
+	make install
+
+Note 1:
+The default installation dir of cgnslib is /usr/local/lib, if you change
+that, use "configure --with-cgns=CGNSdir". More help can be got by "configure --help".
+If some library or head file can't be find, you can modify make.def file by yourself.
+
+Note 2:
+"Make install" will copy binary file to GSS_DIR/bin and material data file to GSS_DIR/lib	
+
+If everything is ok, add GSS_DIR/bin to your path.
+You can goto example directory to check gss.
+	gss xxxx.inp
+
+Since gss-0.42.19, A simple text editor is added. Try it with
+	gssui	
+
+

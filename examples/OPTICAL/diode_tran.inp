@@ -1,0 +1,66 @@
+#==============================================================================
+# GSS example: A silicon photoconductive detector transient simulation with light 
+# source and  PML boundary.
+# For running it, use "gss diode_tran.inp"
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS    ModelFile=diode.cgns Triangle="pzA"
+XMESH    WIDTH=5.0   N.SPACES=300
+YMESH    DEPTH=4.5   N.SPACES=270
+
+# Region and electrode statements
+REGION    Label=PML       Material=PML
+REGION    Label=Vacuum    Material=Vacuum      X.MIN=1.0  X.MAX=4.0  Y.MAX=-1.0  Y.MIN=-3.5
+REGION    Label=Silicon   Material=Si          X.MIN=1.5  X.MAX=3.5  Y.MAX=-1.5  Y.MIN=-3.0
+SEGMENT   Label=Source    Direction=Vertical   X=1.5     Y.MAX=-1.5  Y.MIN=-3.0 
+SEGMENT   Label=Drain     Direction=Vertical   X=3.5     Y.MAX=-1.5  Y.MIN=-3.0 
+
+# Specify impurity profiles
+PROFILE   Type=Uniform Ion=Donor  N.PEAK=1E14  X.MIN=1.5 X.MAX=3.5  \
+          Y.MIN=-3.0  Y.MAX=-1.5
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=OhmicContact     ID=Source  Res=0 Cap=0 Ind=0 
+boundary Type=OhmicContact     ID=Drain   Res=0 Cap=0 Ind=0 
+      
+set Carrier     = pn 
+set DopingScale = 1e14
+
+#------------------------------------------------------------------------------
+# some voltage source and light source are needed here.
+vsource Type=VDC    ID=GND    Tdelay=0   Vconst=0
+vsource Type=VDC    ID=VCC    Tdelay=0   Vconst=3.0
+LSOURCE Type=PULSE  Tdelay=1.0E-11  Tr=2.5E-11  Tf=5.0E-11  pw=2.5E-11  pr=15.0E-11
+
+#------------------------------------------------------------------------------
+#IMPORT   ModelFile = TimeSweep.cgns 
+#PLOT     Variable=DeviceMesh Resolution=RES.High
+#PLOTMESH
+
+#specify DDM method
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=BCGS
+SOLVE    Type=EQUILIBRIUM
+
+#Photogeneration State
+PHOTOGEN  WAVELEN=0.532  INTENSITY=1.0E+3  ANGLE=90  WTE=0.00  WTM=1.00 
+METHOD    Type=EMFEM     LS=LU
+SOLVE     
+
+#set Source to electrode
+ATTACH   Electrode=Source   VApp=GND
+ATTACH   Electrode=Drain    VApp=VCC
+
+#specify DDM method
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=LU  EJModel=ON
+
+# Use DCSWEEP solver to get i-v character
+SOLVE    Type=STEADYSTATE
+SOLVE    Type=TRANSIENT  IVRecord=Drain  IVFile=TimeSweep.txt \
+         TStart=0.0  TStep=1.0e-12  TStop=20.0e-11
+
+#PLOT     Variable=OpticalEz    Resolution=RES.High Measure=Linear
+#PLOT     Variable=OpticalG     Resolution=RES.High Measure=Linear
+
+# extract mesh and solution
+EXPORT   CoreFile=diode_tran.cgns  VTKFile=diode_tran.vtk

@@ -1,0 +1,57 @@
+#==============================================================================
+# GSS example: 1.5 Micron N-Channel MOSFET
+# We fix the gate potential at 5V and sweep source-drain IV curve with both
+# DDML1E and DDML2E solver.
+#==============================================================================
+
+set Carrier     = pn
+set Z.width     = 2
+set LatticeTemp = 3e2
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+# voltage sources are needed here.
+vsource Type = VDC    ID = GND    Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC    Tdelay=0   Vconst=5
+vsource Type = VDC    ID = VGATE  Tdelay=0   Vconst=5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorInterface ID = IF_NOxide_to_NSilicon QF=0
+boundary Type = GateContact        ID = NGate        WorkFunction=4.17
+boundary Type = OhmicContact       ID = NSubstrate   Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID = NSource Res=0 Cap=0 Ind=0
+CONTACT  Type = OhmicContact       ID = NDrain  Res=0 Cap=0 Ind=0
+
+
+#------------------------------------------------------------------------------
+# specify physical model, use Lucent mobility here.
+PMIS region=Si mobility=HP
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+# solve the tranfer function
+IMPORT   CoreFile=nmos_init.cgns
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES Damping=Potential
+SOLVE    Type=DCSWEEP VScan=NDrain  VStart=0.0 VStep=0.1 VStop=5.0
+ATTACH   Electrode=NDrain           VApp=VCC
+SOLVE    Type=DCSWEEP VScan=NGate IVRecord=NGate IVRecord=NDrain \
+         IVFile=tfn.txt VStart=0.0 VStep=0.1 VStop=5.0
+
+# set gate voltage to 5V
+IMPORT   CoreFile=nmos_init.cgns
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP VScan=NGate    VStart=0.0 VStep=0.1 VStop=5.0
+EXPORT   CoreFile=nmos_bias.cgns
+
+# get drain-source IV at Vgs=5V by DDML1E solver 
+IMPORT   CoreFile=nmos_bias.cgns
+ATTACH   Electrode=NGate             VApp=VGATE
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES
+SOLVE    Type=DCSWEEP VScan=NDrain  IVRecord=NDrain \
+         IVRecord=NSource \
+         IVFile=iv1n.txt VStart=0.0 VStep=0.1 VStop=5.0
+EXPORT   CoreFile=nmos_open.cgns
+
+END
+

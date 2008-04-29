@@ -1,0 +1,63 @@
+#==============================================================================
+# GSS example: Silicon photoconductive detector simulation with light source and 
+# PML boundary. We will make the same detector model and compare the result with 
+# medici's result, in this file.
+# For running it, use "gss diode_dc.inp"
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS    ModelFile=diode.cgns Triangle="pzA"
+XMESH    WIDTH=5.0   N.SPACES=300
+YMESH    DEPTH=4.5   N.SPACES=270
+
+# Region and electrode statements
+REGION   Label=PML     Material=PML
+REGION   Label=Vacuum  Material=Vacuum    X.MIN=1.0 X.MAX=4.0  Y.MAX=-1.0 Y.MIN=-3.5
+REGION   Label=Silicon Material=Si        X.MIN=1.5 X.MAX=3.5  Y.MAX=-1.5 Y.MIN=-3.0
+SEGMENT  Label=Source  Direction=Vertical  X=1.5    Y.MAX=-1.5 Y.MIN=-3.0 
+SEGMENT  Label=Drain   Direction=Vertical  X=3.5    Y.MAX=-1.5 Y.MIN=-3.0 
+
+# Specify impurity profiles
+PROFILE   Type=Uniform Ion=Donor  N.PEAK=1E14  X.MIN=1.5 X.MAX=3.5  \
+          Y.MIN=-3.0  Y.MAX=-1.5
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type=OhmicContact     ID=Source  Res=0 Cap=0 Ind=0 
+boundary Type=OhmicContact     ID=Drain   Res=0 Cap=0 Ind=0 
+      
+set Carrier     = pn 
+set DopingScale = 1e14
+
+#------------------------------------------------------------------------------
+# some voltage source and light source are needed here.
+vsource Type=VDC     ID=GND    Tdelay=0   Vconst=0
+LSOURCE Type=UNIFORM Tdelay=0
+
+#------------------------------------------------------------------------------
+PLOTMESH
+
+#specify DDM method
+METHOD   Type = DDML1   Scheme = Newton  NS=LineSearch LS=BCGS
+SOLVE    Type=EQUILIBRIUM
+
+#Photogeneration State
+PHOTOGEN  WAVELEN=0.532  INTENSITY=1.0E+2  ANGLE=90  WTE=0.00  WTM=1.00 
+METHOD    Type=EMFEM     LS=LU
+SOLVE     
+
+#set Source to ground
+ATTACH   Electrode=Source   VApp=GND
+
+#specify DDM method
+METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=GMRES  EJModel=ON
+
+# Use DCSWEEP solver to get i-v character
+SOLVE    Type=DCSWEEP VScan=Drain  IVRecord=Drain  IVFile=iv.txt \
+         VStart=0 VStep=0.025 VStop=1.5
+
+PLOT     Variable=OpticalEz    Resolution=RES.High Measure=Linear
+PLOT     Variable=OpticalG     Resolution=RES.High Measure=Linear
+
+# extract mesh and solution
+EXPORT   CoreFile=diode_dc.cgns  VTKFile=diode_dc.vtk

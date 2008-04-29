@@ -1,0 +1,45 @@
+#==============================================================================
+# GSS example: N-channle MOSFET simulation with InsulatorContact boundary type
+# The drain electrode is biased by 3V VDC from a 0.1k resistence.
+# Gate electrode is stimulated by 3V VDC and a 10mV sinusoidal source at 1MHz.
+# We do the transient simulation here.
+#==============================================================================
+
+set DopingScale = 1e19
+
+#------------------------------------------------------------------------------
+# some voltage sources are needed here.
+vsource Type = VDC    ID = GND  Tdelay=0   Vconst=0
+vsource Type = VDC    ID = VCC  Tdelay=0   Vconst=3
+vsource Type = VDC    ID = VGATE  Tdelay=0 Vconst=3
+vsource Type = VSIN   ID = Vs   Tdelay=0 Vamp=1e-2 Freq=1e6  # 1MHz
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = InsulatorContact  ID = ISGATE    \
+         Eps=3.9 Thickness=0.2e-6 WorkFunction=4.7
+boundary Type = OhmicContact      ID = OMSOURCE  \
+         Res=0 Cap=0 Ind=0  Heat.Transfer=1e4
+boundary Type = OhmicContact      ID = OMDRAIN   \
+         Res=100 Cap=0 Ind=0  Heat.Transfer=1e4
+boundary Type = OhmicContact      ID = OMSUB     \
+         Res=0 Cap=0 Ind=0  Heat.Transfer=1e4 EXT.Temp=300
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+
+IMPORT   CoreFile=mos_bias.cgns
+# set GATE potential
+ATTACH   Electrode=ISGATE      VApp=VGATE VApp=Vs
+ATTACH   Electrode=OMDRAIN     VApp=VCC
+# specify DDM method with basic newton
+METHOD   Type = DDML2E  Scheme = Newton NS=Basic LS=TFQMR Damping=Potential
+
+# do transient simulation of VGATE=3V
+SOLVE    Type=STEADYSTATE
+SOLVE    Type=TRANSIENT  IVRecord=OMDRAIN  IVFile=ivt.txt \
+         TStart=0 TStep=1e-8  TStop = 2e-6
+PLOT     Variable=Potential   Measure=Linear    AzAngle=240  ElAngle=40
+PLOT     Variable=ElecDensity Measure=Linear    AzAngle=240  ElAngle=40
+PLOT     Variable=HoleDensity Measure=Linear    AzAngle=100  ElAngle=40
+PLOT     Variable=Temperature Measure=Linear    AzAngle=40   ElAngle=40

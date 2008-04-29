@@ -1,0 +1,14 @@
+EEPROM read mixed-type transient simulation
+
+VCC    P_VCC  0        0.1V 
+VIN    P_VIN   0       0V (PULSE 0 5 0.2n 20p 20p 2n 4n)
+N1     P_VCC=Drain 0=Source P_VIN=Gate 0=Substrate EEPROM      
+
+* Models for numerical EEPROM transistors
+.MODEL EEPROM NDEV  remote=localhost port=17001
+
+
+.OPTION acct itl2=100 icstep=2e12
+.TRAN 2ps 2.5ns 
+.plot tran v(vout)
+.END

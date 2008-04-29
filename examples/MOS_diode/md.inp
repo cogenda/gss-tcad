@@ -1,0 +1,50 @@
+#==============================================================================
+# This file is used to test Density-Gradient solver 
+#==============================================================================
+
+# Create an initial simulation mesh
+MESH     Type=GSS     ModelFile=mos.cgns Triangle="pzA"
+XMESH    WIDTH=0.001  N.SPACES=2
+YMESH    DEPTH=0.011  N.SPACES=64
+
+# Si (thick=10nm) and SiO2 (thick=1nm)
+REGION    Label=Si   Material=Si 
+REGION    Label=SiO2 Material=SiO2 Y.top=0 Y.bottom=-0.001 
+
+SEGMENT   Label=ISGATE     Location=TOP 
+SEGMENT   Label=OMSUB      Location=BOTTOM
+
+PROFILE   Type=Uniform Ion=Acceptor  N.PEAK=1E15  X.MIN=0.0 X.MAX=0.05  \
+          Y.TOP=0.0 Y.BOTTOM=-0.2
+
+set DopingScale = 1e18
+
+boundary  Type=GateContact      ID=ISGATE    WorkFunction=4.7
+boundary  Type=OhmicContact     ID=OMSUB     Res=0 Cap=0 Ind=0
+
+
+PLOT     Variable=DeviceMesh
+
+# use DDML1 to get a classical initial value.
+METHOD   Type = DDML1   Scheme = Newton   NS=Basic LS=LU toler.relax=1e6
+SOLVE    Type=EQUILIBRIUM 
+
+# since quantum solution differs much from classical solution near Si/SiO2 interface
+# use QNFactor to overcome the initial value problem. 
+#METHOD   Type = QDDML1E   Scheme = Newton   NS=LineSearch LS=LU   Damping=Potential QNFactor=0.01  QPFactor=0 toler.relax=1e6
+#SOLVE    Type=EQUILIBRIUM  
+METHOD   Type = QDDML1E   Scheme = Newton   NS=LineSearch LS=LU   Damping=Potential QNFactor=0.1   QPFactor=0 toler.relax=1e6
+SOLVE    Type=EQUILIBRIUM 
+METHOD   Type = QDDML1E   Scheme = Newton   NS=LineSearch LS=LU   Damping=Potential QNFactor=1.0   QPFactor=0 toler.relax=1e6
+SOLVE    Type=EQUILIBRIUM 
+
+METHOD   Type = QDDML1E   Scheme = Newton   NS=LineSearch LS=LU  Damping=Potential QNFactor=1.0  QPFactor=0 toler.relax=1e6
+SOLVE    Type=DCSWEEP VScan=ISGATE VSTART=0 vstep=0.02 vstop=1.2
+
+PLOT     Variable=Potential    Resolution=RES.High  AzAngle=240  ElAngle=40 
+PLOT     Variable=ElecDensity  Resolution=RES.High  AzAngle=240  ElAngle=40 
+PLOT     Variable=HoleDensity  Resolution=RES.High  AzAngle=240  ElAngle=40 
+PLOT     Variable=QuantumEc    Resolution=RES.High  AzAngle=240  ElAngle=40
+PLOT     Variable=QuantumEv    Resolution=RES.High  AzAngle=240  ElAngle=40
+
+END

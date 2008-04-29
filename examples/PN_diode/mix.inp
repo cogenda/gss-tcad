@@ -1,0 +1,25 @@
+#==============================================================================
+# GSS example: PN Diode simulation
+# On this step, we will do mixed-type transient calculation with NGSPICE 
+#==============================================================================
+
+set Carrier     = pn        # specify carrier type support p,n or pn
+set Z.width     = 100	    # device width in Z dimension. Unit:um
+set LatticeTemp = 3e2       # specify initial temperature of device. Unit:K
+set DopingScale = 1e16
+
+#------------------------------------------------------------------------------
+# no voltage source is needed.
+
+#------------------------------------------------------------------------------
+# specify boundary condition.
+boundary Type = OhmicContact      ID = Anode   Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact      ID = Cathode Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# Import CGNS file generated at first step
+IMPORT   CoreFile=pn.cgns 
+
+METHOD Type=DDML1MIX Scheme=Newton   NS=LineSearch LS=LU ServerPort=17001
+SOLVE  
+

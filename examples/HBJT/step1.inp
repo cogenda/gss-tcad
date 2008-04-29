@@ -1,0 +1,61 @@
+#==============================================================================
+# GSS example: SiGe BJT simulation
+# On the first step, we will generate simulation structure for the transistor. 
+# Then the generated CGNS file will be used on later steps.
+#==============================================================================
+
+MESH     Type=GSS   ModelFile=hbjt.cgns Triangle="pzA"
+XMESH    X.MIN=0.0  X.MAX=0.50   N.SPACES=8
+YMESH    DEPTH=0.1  N.SPACES=8  RATIO=0.8
+YMESH    DEPTH=0.1  N.SPACES=20
+YMESH    DEPTH=0.6  H1=0.005  H2=0.050
+
+REGION    Label=Si1   Material=Si    Y.TOP= 0.000  Y.BOTTOM=-0.100
+REGION    Label=SiGe1 Material=SiGe  Y.TOP=-0.100  Y.BOTTOM=-0.125  \
+          X.MOLE=0.0  Mole.End=0.2
+REGION    Label=SiGe2 Material=SiGe  Y.TOP=-0.125  Y.BOTTOM=-0.200  \
+          X.MOLE=0.2
+REGION    Label=SiGe3 Material=SiGe  Y.TOP=-0.200  Y.BOTTOM=-0.230  \
+          X.MOLE=0.2  Mole.End=0.0
+REGION    Label=Si2   Material=Si    Y.TOP=-0.230  
+
+SEGMENT    Label=Emitter    Location=TOP
+SEGMENT    Label=Base       Location=LEFT    Y.TOP=-0.13  Y.BOTTOM=-0.19
+SEGMENT    Label=Collector  Location=BOTTOM
+
+PROFILE   Ion=Donor     Type=Uniform N.PEAK=2E16  Type=Uniform
+PROFILE   Ion=Donor     Type=Gauss   N.PEAK=5E19  Y.MIN=-0.80  \
+          Y.MAX=-0.80 Y.CHAR=0.125 X.MIN=0 X.MAX=0.50
+PROFILE   Ion=Acceptor  Type=Gauss   N.PEAK=2E18  Y.MIN=-0.12  \
+          Y.MAX=-0.12 Y.CHAR=0.03   X.MIN=0 X.MAX=0.50
+PROFILE   Ion=Donor     Type=Gauss   N.PEAK=7E19  Y.MIN= 0.0   \
+          Y.MAX= 0.0  Y.CHAR=0.06   X.MIN=0 X.MAX=0.50
+	  
+set DopingScale = 1e18
+
+#------------------------------------------------------------------------------
+boundary Type = OhmicContact    ID=Emitter    Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Base       Res=0 Cap=0 Ind=0
+boundary Type = OhmicContact    ID=Collector  Res=0 Cap=0 Ind=0
+
+#------------------------------------------------------------------------------
+# drive command, specify the solving process.
+PLOT     Variable=DeviceMesh
+METHOD   Type = DDML1   Scheme = Newton  NS=Basic LS=GMRES Damping=Potential
+#compute equilibrium state
+#SOLVE    Type = TRANSIENT TStart = 0 TStep=1e-12  TStop = 3e-11
+SOLVE    Type=EQUILIBRIUM 	                          
+
+#REFINE   Variable=Potential Measure=Linear Dispersion=0.3 #refine by potential
+#PLOT     Variable=DeviceMesh
+#METHOD   Type = DDML2   Scheme = Newton   NS=LineSearch LS=GMRES 
+#compute equilibrium state
+#SOLVE    Type=EQUILIBRIUM 
+
+PLOT     Variable=Nd Measure=Linear     AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=Na Measure=Linear     AzAngle=100  ElAngle=30 Style=Color
+PLOT     Variable=ElecDensity Measure=Linear   AzAngle=100  ElAngle=30 
+PLOT     Variable=HoleDensity Measure=Linear   AzAngle=100  ElAngle=30
+PLOT     Variable=Potential Measure=Linear     AzAngle=100  ElAngle=30
+# export mesh and solution
+EXPORT   CoreFile=hbjt.cgns
