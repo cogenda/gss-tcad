@@ -1,3 +1,6 @@
+2008-05-22 Shen Chen <shenchen@nus.edu.sg>
+  Fixed a bug in calculating effective intrinsic carrier density due to bandgap narrowing.
+
 2008-04-29 Shen Chen <shenchen@nus.edu.sg>
   Improved autoconf setup for building dynamic library in Darwin/Mac 
 

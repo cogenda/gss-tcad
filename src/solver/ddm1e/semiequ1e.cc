@@ -73,8 +73,9 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar na = x[zofs[zone_index]+3*A+1];     //electron density of node A
   PetscScalar pa = x[zofs[zone_index]+3*A+2];     //hole density of node A
   mt->mapping(&pzone->danode[A],&aux[A],0);
-  PetscScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc));//conduct band energy level
-  PetscScalar Eva =  -(e*Va + aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv)+ aux[A].Eg);//valence band energy level
+
+  PetscScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  PetscScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   PetscScalar Ra = mt->band->Recomb(pa,na,fs[A].T);
   PetscScalar etana;
   PetscScalar etapa;
@@ -97,8 +98,8 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar nb = x[zofs[zone_index]+3*B+1];     //electron density of node B
   PetscScalar pb = x[zofs[zone_index]+3*B+2];     //hole density of node B
   mt->mapping(&pzone->danode[B],&aux[B],0);
-  PetscScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc));
-  PetscScalar Evb =  -(e*Vb + aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ aux[B].Eg);
+  PetscScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  PetscScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   PetscScalar Rb = mt->band->Recomb(pb,nb,fs[B].T);
   PetscScalar etanb; 
   PetscScalar etapb; 
@@ -121,8 +122,8 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar nc = x[zofs[zone_index]+3*C+1];     //electron density of node C
   PetscScalar pc = x[zofs[zone_index]+3*C+2];     //hole density of node C
   mt->mapping(&pzone->danode[C],&aux[C],0);
-  PetscScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc));
-  PetscScalar Evc =  -(e*Vc + aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv)+ aux[C].Eg);
+  PetscScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  PetscScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   PetscScalar Rc = mt->band->Recomb(pc,nc,fs[C].T);
   PetscScalar etanc;
   PetscScalar etapc;
@@ -550,8 +551,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   na.setADValue(1,1.0);
   pa.setADValue(2,1.0);
   mt->mapping(&pzone->danode[A],&aux[A],0);
-  AutoDScalar Eca =  -(aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc) + e*Va);              //conduct band energy level
-  AutoDScalar Eva =  -(aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv) + aux[A].Eg + e*Va);   //valence band energy level
+  AutoDScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  AutoDScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   AutoDScalar Ra = mt->band->Recomb(pa,na,TD);
   PetscScalar etana;
   PetscScalar etapa;
@@ -577,8 +578,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   nb.setADValue(4,1.0);
   pb.setADValue(5,1.0);
   mt->mapping(&pzone->danode[B],&aux[B],0);
-  AutoDScalar Ecb =  -( aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc) + e*Vb);
-  AutoDScalar Evb =  -( aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ aux[B].Eg + e*Vb);
+  AutoDScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  AutoDScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   AutoDScalar Rb = mt->band->Recomb(pb,nb,TD);
   PetscScalar etanb; 
   PetscScalar etapb; 
@@ -604,8 +605,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   nc.setADValue(7,1.0);
   pc.setADValue(8,1.0);
   mt->mapping(&pzone->danode[C],&aux[C],0);
-  AutoDScalar Ecc =  -( aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc) + e*Vc);
-  AutoDScalar Evc =  -( aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv)+ aux[C].Eg + e*Vc);
+  AutoDScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
+  AutoDScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
   AutoDScalar Rc = mt->band->Recomb(pc,nc,TD);
   PetscScalar etanc;
   PetscScalar etapc;
@@ -1250,8 +1251,8 @@ void SMCZone::F1E_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &ODE
     
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -1262,9 +1263,8 @@ void SMCZone::F1E_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &ODE
   }
   else     //Boltzmann
   {
-    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + kb*fs[i].T/e*log(Nc/nie) 
-                       + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-                       -x[zofs[z]+equ_num*size+om_equ];
+    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + kb*fs[i].T/2/e*log(Nc/Nv) + mt->band->Eg(fs[i].T)/2/e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
     PetscScalar electron_density,hole_density;
     if(Na>Nd)   //p-type
     {
@@ -1870,8 +1870,8 @@ void SMCZone::J1E_ddm_ombc(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_Formula &
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+3*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;

@@ -142,14 +142,14 @@ public:
     PetscScalar bandgap = Eg(Tl);
     PetscScalar Nc = NC300*pow(Tl/T300,NC_F);
     PetscScalar Nv = NV300*pow(Tl/T300,NV_F);
-    return sqrt(Nc*Nv)*exp(-bandgap/(2*kb*Tl))*exp(EgNarrow(Tl));
+    return sqrt(Nc*Nv)*exp(-bandgap/(2*kb*Tl))*exp(EgNarrow(Tl)/(2*kb*Tl));
   }
   AutoDScalar nie (const AutoDScalar &Tl)
   {
     AutoDScalar bandgap = Eg(Tl);
     AutoDScalar Nc = NC300*pow(Tl/T300,NC_F);
     AutoDScalar Nv = NV300*pow(Tl/T300,NV_F);
-    return sqrt(Nc*Nv)*exp(-bandgap/(2*kb*Tl))*exp(EgNarrow(Tl));
+    return sqrt(Nc*Nv)*exp(-bandgap/(2*kb*Tl))*exp(EgNarrow(Tl)/(2*kb*Tl));
   }
  
   //end of Bandgap
