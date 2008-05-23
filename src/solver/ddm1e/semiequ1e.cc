@@ -132,20 +132,20 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri, PetscScalar *x, PetscScalar *f, vector<int>
 
     if (pEdge==0) {
       mt->mapping(&pzone->danode[A],&aux[A],0);
-      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc));//conduct band energy level
-      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv)+ aux[A].Eg);//valence band energy level
+      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RA = mt->band->Recomb(pA,nA,fs[A].T);
       niA = mt->band->nie(T);
 
       mt->mapping(&pzone->danode[B],&aux[B],0);
-      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc));//conduct band energy level
-      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ aux[B].Eg);//valence band energy level
+      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RB = mt->band->Recomb(pB,nB,fs[B].T);
       niB = mt->band->nie(T);
 
       mt->mapping(&pzone->danode[C],&aux[C],0);
-      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc));//conduct band energy level
-      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv)+ aux[C].Eg);//valence band energy level
+      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RC = mt->band->Recomb(pC,nC,fs[C].T);
       niC = mt->band->nie(T);
 #ifdef _FERMI_  
@@ -550,20 +550,20 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
 
     if (pEdge==0) {
       mt->mapping(&pzone->danode[A],&aux[A],0);
-      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc));//conduct band energy level
-      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv)+ aux[A].Eg);//valence band energy level
+      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RA = mt->band->Recomb(pA,nA,TD);
       niA = mt->band->nie(T);
 
       mt->mapping(&pzone->danode[B],&aux[B],0);
-      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc));//conduct band energy level
-      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ aux[B].Eg);//valence band energy level
+      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RB = mt->band->Recomb(pB,nB,TD);
       niB = mt->band->nie(T);
 
       mt->mapping(&pzone->danode[C],&aux[C],0);
-      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc));//conduct band energy level
-      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv)+ aux[C].Eg);//valence band energy level
+      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
       RC = mt->band->Recomb(pC,nC,TD);
       niC = mt->band->nie(T);
 #ifdef _FERMI_  
@@ -968,8 +968,8 @@ void SMCZone::F1E_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &ODE
     
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -980,9 +980,8 @@ void SMCZone::F1E_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &ODE
   }
   else     //Boltzmann
   {
-    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + kb*fs[i].T/e*log(Nc/nie) 
-                       + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-                       -x[zofs[z]+equ_num*size+om_equ];
+    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + kb*fs[i].T/2/e*log(Nc/Nv) + mt->band->Eg(fs[i].T)/2/e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
     PetscScalar electron_density,hole_density;
     if(Na>Nd)   //p-type
     {
@@ -1587,8 +1586,8 @@ void SMCZone::J1E_ddm_ombc(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_Formula &
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+3*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
