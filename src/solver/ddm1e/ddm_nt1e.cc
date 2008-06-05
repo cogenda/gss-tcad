@@ -1457,17 +1457,19 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
   if(sv.Electrode_VScan!=-1)
   {
     PetscScalar V = sv.VStart;
+    PetscScalar V_n, V_n1;
     PetscScalar VStep = sv.VStep;
     for(int i=0;i<sv.Electrode_VScan_Name.size();i++)
       bc.Set_electrode_type(sv.Electrode_VScan_Name[i].c_str(),VoltageBC);
-    int diverged_retry=0;
+    int diverged_retry=0; 
+    stack<PetscScalar> V_retry;
     probe_open(DCSWEEP_VSCAN);
-    do
+    for (int step=1; V*sv.VStep < sv.VStop *sv.VStep *(1+1e-7); step++)
     {
       its = 0;
       gss_log.string_buf()<<"DC Scan: V("<<sv.Electrode_VScan_Name[0];
       for(int i=1;i<sv.Electrode_VScan_Name.size();i++) 
-	gss_log.string_buf()<<", "<<sv.Electrode_VScan_Name[i];
+        gss_log.string_buf()<<", "<<sv.Electrode_VScan_Name[i];
       gss_log.string_buf()<<") = "<<V/voltage_scale_V<<" V"<<"\n";
       gss_log.record();
       for(int i=0;i<sv.Electrode_VScan_Name.size();i++)
@@ -1481,23 +1483,39 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
         diverged_retry=0;
         solution_update();
         probe(DCSWEEP_VSCAN,V);
-        if(fabs(VStep) < fabs(sv.VStep))
-          VStep *= 1.1;
-        V+=VStep;
-        if(V*sv.VStep > sv.VStop*sv.VStep && V*sv.VStep < (sv.VStop + VStep - 1e-10*VStep)*sv.VStep)
+        // save solution
+        VecCopy(x_n,x_n1); V_n1=V_n;
+        VecCopy(x,x_n); V_n=V;
+        
+        if (V_retry.empty())
+          V+=sv.VStep;
+        else
+        {
+          V=V_retry.top();
+          V_retry.pop();
+        }
+
+        if(fabs(V-sv.VStop)<1e-10)
           V=sv.VStop;
       }
       else // oh, diverged... reduce step and try again
       {
-        if(++diverged_retry>=8)
+        if(step==1)
         {
-          gss_log.string_buf()<<"------> Too many failed steps, give up tring.\n\n\n";
+          gss_log.string_buf()<<"------> Failed in the first step.\n\n\n";
           gss_log.record();
           break;
         }
-        diverged_recovery();
-        VStep /= 2.0;
-        V-=VStep;
+        if(V_retry.size()>=8)
+        {
+          gss_log.string_buf()<<"------> Too many failed steps, give up trying.\n\n\n";
+          gss_log.record();
+          break;
+        }
+        // recover last solution
+        VecCopy(x_n,x);
+        V_retry.push(V);
+        V=(V+V_n)/2.0;
         gss_log.string_buf()<<"------> nonlinear solver "<<SNESConvergedReasons[reason]<<", do recovery...\n\n\n";
         gss_log.record();
         continue;
@@ -1516,7 +1534,6 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
       }
       
     }
-    while(V*sv.VStep < (sv.VStop + 0.5*VStep)*sv.VStep);
   }
 
   if(sv.Electrode_IScan!=-1)
