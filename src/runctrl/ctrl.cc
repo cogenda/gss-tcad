@@ -416,7 +416,7 @@ int  SolveControl::set_method(list<Cmd>::iterator  pcmd)
 {
   PetscTruth flg;
 
-  if(!pcmd->allowed_args(26,"type","scheme","ns","damping","ls","serverport","ejmodel","fermi",
+  if(!pcmd->allowed_args(27,"type","scheme","ns","damping","ls","serverport","ejmodel","fermi","projection",
                          "highfieldmobility","impactionization","ii.type","bandbandtunneling","qnfactor","qpfactor",
                          "relative.tol","possion.tol","elec.continuty.tol","hole.continuty.tol","latt.temp.tol",
                          "elec.energy.tol","hole.energy.tol","elec.quantum.tol","hole.quantum.tol",
@@ -432,6 +432,7 @@ int  SolveControl::set_method(list<Cmd>::iterator  pcmd)
   solve_define.QPFactor          = pcmd->get_number("qpfactor",0,1.0);
   solve_define.EJModel           = pcmd->get_bool("ejmodel", 0, false);
   solve_define.Fermi             = pcmd->get_bool("fermi", 0, false);
+  solve_define.Projection        = pcmd->get_bool("projection", 0, false);
   
   solve_define.maxit                    = pcmd->get_integer("maxiteration", 0, 30);
   solve_define.relative_toler           = pcmd->get_number("relative.tol",0,1e-5);

@@ -351,7 +351,8 @@ BEGIN  PARAMETERS;
 <PARAMETERS>Fermi             |
 <PARAMETERS>PseudoTime        |
 <PARAMETERS>Append            |
-<PARAMETERS>EJModel                           {
+<PARAMETERS>EJModel           |
+<PARAMETERS>Projection                        {
 
 #ifdef DEBUG
         printf("PARAMETER:");ECHO;

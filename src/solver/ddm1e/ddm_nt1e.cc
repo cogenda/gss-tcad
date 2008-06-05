@@ -957,6 +957,46 @@ PetscErrorCode LimitorNonNegativeCarrier_L1E(SNES snes, Vec x,Vec y,Vec w,void *
   return(0);
 }
 
+void ProjectionNonNegativeCarrier_L1E(Vec x, Vec xo, DDM_Solver_L1E *ps)
+{
+  PetscScalar    *xx;
+  PetscScalar    *oo;
+  VecGetArray(x,&xx);
+  VecGetArray(xo,&oo);
+  
+  int offset=0;
+  for(int z=0;z<ps->zone_num;z++)
+  {
+    if(ps->zonedata[z]->material_type==Semiconductor)
+    {
+      SMCZone *pzonedata = dynamic_cast< SMCZone * >(ps->zonedata[z]);
+      for(int i=0;i<pzonedata->pzone->davcell.size();i++)
+      { 
+        if (xx[offset+1] <0 )
+          xx[offset+1] = 0.01 * oo[offset+1];
+        if (xx[offset+2] <0 )
+          xx[offset+2] = 0.01 * oo[offset+2];
+        offset += 3;
+      }
+      offset += pzonedata->electrode.size();
+    }
+    else if(ps->zonedata[z]->material_type==Insulator)
+    {
+      ISZone *pzonedata = dynamic_cast< ISZone * >(ps->zonedata[z]);
+      offset += pzonedata->pzone->davcell.size();
+      offset += pzonedata->electrode.size();
+    }
+    else if(ps->zonedata[z]->material_type==Conductor)
+    {
+      ElZone *pzonedata = dynamic_cast< ElZone * >(ps->zonedata[z]);
+      offset += pzonedata->pzone->davcell.size();
+    }
+  }
+  VecRestoreArray(x,&xx);
+  VecRestoreArray(xo,&oo);
+}
+
+
 
 /* ----------------------------------------------------------------------------
  * DDM_Solver_L1E::init_solver:  This function do initial setup for nonlinear solver
@@ -1457,14 +1497,13 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
   if(sv.Electrode_VScan!=-1)
   {
     PetscScalar V = sv.VStart;
-    PetscScalar V_n, V_n1;
-    PetscScalar VStep = sv.VStep;
+    PetscScalar V_n, V_n1, V_n2;
     for(int i=0;i<sv.Electrode_VScan_Name.size();i++)
       bc.Set_electrode_type(sv.Electrode_VScan_Name[i].c_str(),VoltageBC);
     int diverged_retry=0; 
     stack<PetscScalar> V_retry;
     probe_open(DCSWEEP_VSCAN);
-    for (int step=1; V*sv.VStep < sv.VStop *sv.VStep *(1+1e-7); step++)
+    for (int step=0; V*sv.VStep < sv.VStop *sv.VStep *(1+1e-7);)
     {
       its = 0;
       gss_log.string_buf()<<"DC Scan: V("<<sv.Electrode_VScan_Name[0];
@@ -1484,8 +1523,10 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
         solution_update();
         probe(DCSWEEP_VSCAN,V);
         // save solution
+        VecCopy(x_n1,x_n2); V_n2=V_n1;
         VecCopy(x_n,x_n1); V_n1=V_n;
         VecCopy(x,x_n); V_n=V;
+        step++;
         
         if (V_retry.empty())
           V+=sv.VStep;
@@ -1497,10 +1538,22 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
 
         if(fabs(V-sv.VStop)<1e-10)
           V=sv.VStop;
+
+        for(int j=0;j<sv.Electrode_Record.size();j++)
+        {
+          fprintf(fiv,"%lf\t%e\t",
+              double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Potential_new()/voltage_scale_V),
+              double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Current_new()/current_scale_mA));
+        }
+        if(sv.Electrode_Record.size())
+        {
+          fprintf(fiv,"\n");
+          fflush(fiv);
+        }
       }
       else // oh, diverged... reduce step and try again
       {
-        if(step==1)
+        if(step==0)
         {
           gss_log.string_buf()<<"------> Failed in the first step.\n\n\n";
           gss_log.record();
@@ -1518,21 +1571,34 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
         V=(V+V_n)/2.0;
         gss_log.string_buf()<<"------> nonlinear solver "<<SNESConvergedReasons[reason]<<", do recovery...\n\n\n";
         gss_log.record();
-        continue;
       }
 
-      for(int j=0;j<sv.Electrode_Record.size();j++)
+      if (sv.Projection)
       {
-        fprintf(fiv,"%lf\t%e\t",
-                double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Potential_new()/voltage_scale_V),
-                double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Current_new()/current_scale_mA));
+        // solution projection
+        PetscScalar hn = V-V_n;
+        PetscScalar hn1 = V_n-V_n1;
+        PetscScalar hn2 = V_n1-V_n2;
+        if (step>=3)
+        {
+          // quadradic projection
+          PetscScalar cn=hn*(hn+2*hn1+hn2)/(hn1*(hn1+hn2));
+          PetscScalar cn1=-hn*(hn+hn1+hn2)/(hn1*hn2);
+          PetscScalar cn2=hn*(hn+hn1)/(hn2*(hn1+hn2));
+
+          VecAXPY(x,cn,x_n);
+          VecAXPY(x,cn1,x_n1);
+          VecAXPY(x,cn2,x_n2);
+          ProjectionNonNegativeCarrier_L1E(x,x_n,this);
+        }
+        else if (step>=2)
+        {
+          // linear projection
+          VecAXPY(x, hn/hn1,x_n);
+          VecAXPY(x,-hn/hn1,x_n1);
+          ProjectionNonNegativeCarrier_L1E(x,x_n,this);
+        }
       }
-      if(sv.Electrode_Record.size())
-      {
-        fprintf(fiv,"\n");
-        fflush(fiv);
-      }
-      
     }
   }
 
@@ -1540,10 +1606,11 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
   {
     bc.Set_electrode_type(sv.Electrode_IScan_Name.c_str(),CurrentBC);
     PetscScalar I = sv.IStart;
-    PetscScalar IStep = sv.IStep;
+    PetscScalar I_n, I_n1, I_n2;
     int diverged_retry=0;
+    stack<PetscScalar> I_retry;
     probe_open(DCSWEEP_ISCAN);
-    do
+    for (int step=0; I*sv.IStep < sv.IStop *sv.IStep *(1+1e-7); )
     {
       its = 0;
       gss_log.string_buf()<<"DC Scan: I("<<sv.Electrode_IScan_Name<<") = "<<I/current_scale_mA<<" mA"<<"\n";
@@ -1558,41 +1625,82 @@ int DDM_Solver_L1E::solve_dcsweep(SolveDefine &sv)
         diverged_retry=0;
         solution_update();
         probe(DCSWEEP_ISCAN,I);
-        if(fabs(IStep) < fabs(sv.IStep))
-          IStep *= 1.1;
-        I+=IStep;
-        if(I*sv.IStep > sv.IStop*sv.IStep && I*sv.IStep < (sv.IStop + IStep - 1e-10*IStep)*sv.IStep)
+        // save solution
+        VecCopy(x_n1,x_n2); I_n2=I_n1;
+        VecCopy(x_n,x_n1); I_n1=I_n;
+        VecCopy(x,x_n); I_n=I;
+        step++;
+        
+        if (I_retry.empty())
+          I+=sv.IStep;
+        else
+        {
+          I=I_retry.top();
+          I_retry.pop();
+        }
+
+        if(fabs(I-sv.IStop)<1e-10)
           I=sv.IStop;
+        for(int j=0;j<sv.Electrode_Record.size();j++)
+        {
+          fprintf(fiv,"%lf\t%e\t",
+              double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Potential_new()/voltage_scale_V),
+              double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Current_new()/current_scale_mA));
+        }
+        if(sv.Electrode_Record.size())
+        {
+          fprintf(fiv,"\n");
+          fflush(fiv);
+        }
       }
       else // oh, diverged... reduce step and try again
       {
-        if(++diverged_retry>=8) //failed 8 times, stop tring
+        if(step==0)
+        {
+          gss_log.string_buf()<<"------> Failed in the first step.\n\n\n";
+          gss_log.record();
+          break;
+        }
+        if(I_retry.size()>=8) //failed 8 times, stop tring
         {
           gss_log.string_buf()<<"------> Too many failed steps, give up tring.\n\n\n";
           gss_log.record();
           break;
         }
-        diverged_recovery();
-        IStep /= 2.0;
-        I-=IStep;
+        VecCopy(x_n,x);
+        I_retry.push(I);
+        I=(I+I_n)/2.0;
         gss_log.string_buf()<<"------> nonlinear solver "<<SNESConvergedReasons[reason]<<", do recovery...\n\n\n";
         gss_log.record();
-        continue;
       }
 
-      for(int j=0;j<sv.Electrode_Record.size();j++)
+      if (sv.Projection)
       {
-        fprintf(fiv,"%lf\t%e\t",
-                double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Potential_new()/voltage_scale_V),
-                double(bc.Get_pointer(sv.Electrode_Record[j])->Get_Current_new()/current_scale_mA));
-      }
-      if(sv.Electrode_Record.size())
-      {
-        fprintf(fiv,"\n");
-        fflush(fiv);
+        // solution projection
+        PetscScalar hn = I-I_n;
+        PetscScalar hn1 = I_n-I_n1;
+        PetscScalar hn2 = I_n1-I_n2;
+        if (step>=3)
+        {
+          // quadradic projection
+          PetscScalar cn=hn*(hn+2*hn1+hn2)/(hn1*(hn1+hn2));
+          PetscScalar cn1=-hn*(hn+hn1+hn2)/(hn1*hn2);
+          PetscScalar cn2=hn*(hn+hn1)/(hn2*(hn1+hn2));
+
+          VecAXPY(x,cn,x_n);
+          VecAXPY(x,cn1,x_n1);
+          VecAXPY(x,cn2,x_n2);
+          ProjectionNonNegativeCarrier_L1E(x,x_n,this);
+        }
+        else if (step>=2)
+        {
+          // linear projection
+          VecAXPY(x, hn/hn1,x_n);
+          VecAXPY(x,-hn/hn1,x_n1);
+          ProjectionNonNegativeCarrier_L1E(x,x_n,this);
+        }
       }
     }
-    while(I*sv.IStep < (sv.IStop+0.5*IStep)*sv.IStep);
   }
 
   if(!sv.IVFile.empty())        fclose(fiv);

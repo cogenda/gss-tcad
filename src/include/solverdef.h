@@ -136,6 +136,7 @@ public:
   int     MaxIteration; //Max Iteration number
   int     port;         //the net port used for mix simulation
   int     BDF_Type;     //transient solver: ODE formula
+  bool    Projection;   //use solution projection in DC sweep
   // semiconductor region advanced model specification
   bool    HighFieldMobility;
   bool    BandBandTunneling;
@@ -186,6 +187,7 @@ public:
     Scheme = DDM_Newton;
     NS = LineSearch;
     Damping = DampingNo;
+    Projection = false;
     LS = "gmres";
     Fermi=false;
     IncompleteIonization=false;
