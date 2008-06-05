@@ -27,1168 +27,885 @@
 #define _HMOB_B_
 #define _HMOB_C_
 #define _II_
-#define _IIA_
-#define _IIB_
-#define _IIC_
 #define _EXP_R_
 #define _FERMI_
+#define _HURKX_BTBT_
 
-
-void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &zofs)
+void rotate3Scalar( PetscScalar& a, PetscScalar& b, PetscScalar& c) 
 {
-  int A = ptri->node[0];
-  int B = ptri->node[1];
-  int C = ptri->node[2];
-  PetscScalar xa = pzone->danode[ptri->node[0]].x;
-  PetscScalar xb = pzone->danode[ptri->node[1]].x;
-  PetscScalar xc = pzone->danode[ptri->node[2]].x;
-  PetscScalar ya = pzone->danode[ptri->node[0]].y;
-  PetscScalar yb = pzone->danode[ptri->node[1]].y;
-  PetscScalar yc = pzone->danode[ptri->node[2]].y;
-  PetscScalar tri_area = ptri->area;
-  PetscScalar Sax = (xc-xb)/ptri->edge_len[0];
-  PetscScalar Say = (yc-yb)/ptri->edge_len[0];
-  PetscScalar Sbx = (xa-xc)/ptri->edge_len[1];
-  PetscScalar Sby = (ya-yc)/ptri->edge_len[1];
-  PetscScalar Scx = (xb-xa)/ptri->edge_len[2];
-  PetscScalar Scy = (yb-ya)/ptri->edge_len[2];
-  PetscScalar Wab = ptri->d[1]/((ptri->d[1]+ptri->d[2])*sin(ptri->angle[2])*sin(ptri->angle[2]));
-  PetscScalar Wac = ptri->d[2]/((ptri->d[1]+ptri->d[2])*sin(ptri->angle[1])*sin(ptri->angle[1]));
-  PetscScalar Wbc = ptri->d[2]/((ptri->d[0]+ptri->d[2])*sin(ptri->angle[0])*sin(ptri->angle[0]));
-  PetscScalar Wba = ptri->d[0]/((ptri->d[0]+ptri->d[2])*sin(ptri->angle[2])*sin(ptri->angle[2]));
-  PetscScalar Wca = ptri->d[0]/((ptri->d[0]+ptri->d[1])*sin(ptri->angle[1])*sin(ptri->angle[1]));
-  PetscScalar Wcb = ptri->d[1]/((ptri->d[0]+ptri->d[1])*sin(ptri->angle[0])*sin(ptri->angle[0]));
-  PetscScalar Ma  = -cos(ptri->angle[0]);
-  PetscScalar Mb  = -cos(ptri->angle[1]);
-  PetscScalar Mc  = -cos(ptri->angle[2]);
-
-  PetscScalar e  =  mt->e;
-  PetscScalar T  = (fs[A].T+fs[B].T+fs[C].T)/3.0;
-  PetscScalar kb = mt->kb;
-  PetscScalar Vt = mt->kb*T/e;
-  PetscScalar Eg = mt->band->Eg(T);
-  PetscScalar S;
-
-  PetscScalar Va = x[zofs[zone_index]+3*A+0];     //potential of node A
-  PetscScalar na = x[zofs[zone_index]+3*A+1];     //electron density of node A
-  PetscScalar pa = x[zofs[zone_index]+3*A+2];     //hole density of node A
-  mt->mapping(&pzone->danode[A],&aux[A],0);
-
-  PetscScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  PetscScalar Ra = mt->band->Recomb(pa,na,fs[A].T);
-  PetscScalar etana;
-  PetscScalar etapa;
-  PetscScalar Nca;
-  PetscScalar Nva;
-  PetscScalar nia = mt->band->nie(T);
-#ifdef _FERMI_  
-  if(Fermi)
-  {
-    Nca = mt->band->Nc(fs[A].T);
-    Nva = mt->band->Nv(fs[A].T);
-    Eca = Eca - e*Vt*log(gamma_f(fabs(na)/Nca));
-    Eva = Eva + e*Vt*log(gamma_f(fabs(pa)/Nva));
-  }
-#endif  
-  PetscScalar phina;
-  PetscScalar phipa;
-
-  PetscScalar Vb = x[zofs[zone_index]+3*B+0];     //potential of node B
-  PetscScalar nb = x[zofs[zone_index]+3*B+1];     //electron density of node B
-  PetscScalar pb = x[zofs[zone_index]+3*B+2];     //hole density of node B
-  mt->mapping(&pzone->danode[B],&aux[B],0);
-  PetscScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  PetscScalar Rb = mt->band->Recomb(pb,nb,fs[B].T);
-  PetscScalar etanb; 
-  PetscScalar etapb; 
-  PetscScalar Ncb;
-  PetscScalar Nvb;
-  PetscScalar nib = mt->band->nie(T);
-#ifdef _FERMI_    
-  if(Fermi)
-  {
-    Ncb = mt->band->Nc(fs[B].T);
-    Nvb = mt->band->Nv(fs[B].T);
-    Ecb = Ecb - e*Vt*log(gamma_f(fabs(nb)/Ncb));
-    Evb = Evb + e*Vt*log(gamma_f(fabs(pb)/Nvb));
-  }
-#endif  
-  PetscScalar phinb;
-  PetscScalar phipb;
-
-  PetscScalar Vc = x[zofs[zone_index]+3*C+0];     //potential of node C
-  PetscScalar nc = x[zofs[zone_index]+3*C+1];     //electron density of node C
-  PetscScalar pc = x[zofs[zone_index]+3*C+2];     //hole density of node C
-  mt->mapping(&pzone->danode[C],&aux[C],0);
-  PetscScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  PetscScalar Rc = mt->band->Recomb(pc,nc,fs[C].T);
-  PetscScalar etanc;
-  PetscScalar etapc;
-  PetscScalar Ncc; 
-  PetscScalar Nvc; 
-  PetscScalar nic = mt->band->nie(T);
-#ifdef _FERMI_    
-  if(Fermi)
-  {
-    Ncc = mt->band->Nc(fs[C].T);
-    Nvc = mt->band->Nv(fs[C].T);
-    Ecc = Ecc - e*Vt*log(gamma_f(fabs(nc)/Ncc));
-    Evc = Evc + e*Vt*log(gamma_f(fabs(pc)/Nvc));
-  }
-#endif  
-  PetscScalar phinc;
-  PetscScalar phipc;
-  
-  PetscScalar Ex = -((yb-yc)*Va + (yc-ya)*Vb +(ya-yb)*Vc)/(2*tri_area);
-  PetscScalar Ey = -((xc-xb)*Va + (xa-xc)*Vb +(xb-xa)*Vc)/(2*tri_area);
-
-  PetscScalar E = sqrt(Ex*Ex+Ey*Ey+1e-20);
-  PetscScalar G = 0;
-  PetscScalar IIn=0,IIp=0;
-  PetscScalar mun,mup;
-  PetscScalar Epnc=0,Etnc=0;
-  PetscScalar Eppc=0,Etpc=0;
-  PetscScalar Epna=0,Etna=0;
-  PetscScalar Eppa=0,Etpa=0;
-  PetscScalar Epnb=0,Etnb=0;
-  PetscScalar Eppb=0,Etpb=0;
-  PetscScalar Jna_norm,Jpa_norm;
-  PetscScalar Jnb_norm,Jpb_norm;
-  PetscScalar Jnc_norm,Jpc_norm;
-#ifdef _II_
-  if(ImpactIonization && IIType==GradQf)
-  {
-    phina = Va - log(fabs(na)/nia)*Vt;
-    phipa = Va + log(fabs(pa)/nia)*Vt;
-    phinb = Vb - log(fabs(nb)/nib)*Vt;
-    phipb = Vb + log(fabs(pb)/nib)*Vt;
-    phinc = Vc - log(fabs(nc)/nic)*Vt;
-    phipc = Vc + log(fabs(pc)/nic)*Vt;
-    PetscScalar Fnx = ((yb-yc)*phina + (yc-ya)*phinb +(ya-yb)*phinc)/(2*tri_area);
-    PetscScalar Fny = ((xc-xb)*phina + (xa-xc)*phinb +(xb-xa)*phinc)/(2*tri_area);
-    PetscScalar Fpx = ((yb-yc)*phipa + (yc-ya)*phipb +(ya-yb)*phipc)/(2*tri_area);
-    PetscScalar Fpy = ((xc-xb)*phipa + (xa-xc)*phipb +(xb-xa)*phipc)/(2*tri_area);
-    PetscScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
-    PetscScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
-    IIn =  mt->gen->ElecGenRate(T,Fn,Eg);
-    IIp =  mt->gen->HoleGenRate(T,Fp,Eg);
-  }
-
-  if(ImpactIonization && IIType==EVector)
-  {
-    phina = Va - log(fabs(na)/nia)*Vt;
-    phipa = Va + log(fabs(pa)/nia)*Vt;
-    phinb = Vb - log(fabs(nb)/nib)*Vt;
-    phipb = Vb + log(fabs(pb)/nib)*Vt;
-    phinc = Vc - log(fabs(nc)/nic)*Vt;
-    phipc = Vc + log(fabs(pc)/nic)*Vt;
-    PetscScalar Fnx = Ex;
-    PetscScalar Fny = Ey;
-    PetscScalar Fpx = Ex;
-    PetscScalar Fpy = Ey;
-    PetscScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
-    PetscScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
-    IIn =  mt->gen->ElecGenRate(T,Fn,Eg);
-    IIp =  mt->gen->HoleGenRate(T,Fp,Eg);
-  }
-#endif
-#ifdef _FLUX1_
-  PetscScalar Jnc =  In(Vt,Eca/e,Ecb/e,na,nb,ptri->edge_len[2]);
-  PetscScalar Jpc =  Ip(Vt,Eva/e,Evb/e,pa,pb,ptri->edge_len[2]);
-  PetscScalar Jna =  In(Vt,Ecb/e,Ecc/e,nb,nc,ptri->edge_len[0]);
-  PetscScalar Jpa =  Ip(Vt,Evb/e,Evc/e,pb,pc,ptri->edge_len[0]);
-  PetscScalar Jnb =  In(Vt,Ecc/e,Eca/e,nc,na,ptri->edge_len[1]);
-  PetscScalar Jpb =  Ip(Vt,Evc/e,Eva/e,pc,pa,ptri->edge_len[1]);
-  PetscScalar Jn_scale = dmax(dmax(fabs(Jna),fabs(Jnb)),dmax(fabs(Jnc),nia*nia));
-  PetscScalar Jp_scale = dmax(dmax(fabs(Jpa),fabs(Jpb)),dmax(fabs(Jpc),nia*nia));
-  Jnc /=  Jn_scale;
-  Jpc /=  Jp_scale;
-  Jna /=  Jn_scale;
-  Jpa /=  Jp_scale;
-  Jnb /=  Jn_scale;
-  Jpb /=  Jp_scale;
-#endif
-#ifdef _FLUX2_
-  PetscScalar Jnc =  In(Vt,(Ecb-Eca)/e,na,nb,ptri->edge_len[2]);
-  PetscScalar Jpc =  Ip(Vt,(Evb-Eva)/e,pa,pb,ptri->edge_len[2]);
-  PetscScalar Jna =  In(Vt,(Ecc-Ecb)/e,nb,nc,ptri->edge_len[0]);
-  PetscScalar Jpa =  Ip(Vt,(Evc-Evb)/e,pb,pc,ptri->edge_len[0]);
-  PetscScalar Jnb =  In(Vt,(Eca-Ecc)/e,nc,na,ptri->edge_len[1]);
-  PetscScalar Jpb =  Ip(Vt,(Eva-Evc)/e,pc,pa,ptri->edge_len[1]);
-  PetscScalar Jn_scale = dmax(dmax(fabs(Jna),fabs(Jnb)),dmax(fabs(Jnc),nia*nia));
-  PetscScalar Jp_scale = dmax(dmax(fabs(Jpa),fabs(Jpb)),dmax(fabs(Jpc),nia*nia));
-  Jnc /=  Jn_scale;
-  Jpc /=  Jp_scale;
-  Jna /=  Jn_scale;
-  Jpa /=  Jp_scale;
-  Jnb /=  Jn_scale;
-  Jpb /=  Jp_scale;
-#endif
-  
-  //flux along A-B
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
-    {
-      PetscScalar Jncx = ((Wca+Wcb)*Scx - Wca*Mb*Sax - Wcb*Ma*Sbx)*Jnc
-                       + (Wca*Sax - Wca*Mb*Scx)*Jna
-                       + (Wcb*Sbx - Wcb*Ma*Scx)*Jnb;
-      PetscScalar Jncy = ((Wca+Wcb)*Scy - Wca*Mb*Say - Wcb*Ma*Sby)*Jnc
-                       + (Wca*Say - Wca*Mb*Scy)*Jna
-                       + (Wcb*Sby - Wcb*Ma*Scy)*Jnb;
-      PetscScalar Jpcx = ((Wca+Wcb)*Scx - Wca*Mb*Sax - Wcb*Ma*Sbx)*Jpc
-                       + (Wca*Sax - Wca*Mb*Scx)*Jpa
-                       + (Wcb*Sbx - Wcb*Ma*Scx)*Jpb;
-      PetscScalar Jpcy = ((Wca+Wcb)*Scy - Wca*Mb*Say - Wcb*Ma*Sby)*Jpc
-                       + (Wca*Say - Wca*Mb*Scy)*Jpa
-                       + (Wcb*Sby - Wcb*Ma*Scy)*Jpb;
-      Jnc_norm = sqrt(Jncx*Jncx + Jncy*Jncy + 1e-100);
-      Jpc_norm = sqrt(Jpcx*Jpcx + Jpcy*Jpcy + 1e-100);
-      Epnc = (Ex*Jncx + Ey*Jncy)/Jnc_norm;
-      Etnc = (Ex*Jncy - Ey*Jncx)/Jnc_norm;
-      Eppc = (Ex*Jpcx + Ey*Jpcy)/Jpc_norm;
-      Etpc = (Ex*Jpcy - Ey*Jpcx)/Jpc_norm;
-    }
-    else
-    {
-      Epnc = fabs(Eca-Ecb)/e/ptri->edge_len[2]; //parallel electrical field for electron
-      Eppc = fabs(Eva-Evb)/e/ptri->edge_len[2]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etnc = fabs(Eca + ptri->edge_len[1]*cos(ptri->angle[0])*(Ecb-Eca)/ptri->edge_len[2] - Ecc)
-           /(ptri->edge_len[1]*sin(ptri->angle[0]))/e;
-      Etpc = fabs(Eva + ptri->edge_len[1]*cos(ptri->angle[0])*(Evb-Eva)/ptri->edge_len[2] - Evc)
-           /(ptri->edge_len[1]*sin(ptri->angle[0]))/e;
-    }
-
-    mt->mapping(&pzone->danode[A],&aux[A],0);
-    aux[A].mun =  mt->mob->ElecMob(pa,na,T,dmax(0,Epnc),fabs(Etnc),T);
-    aux[A].mup =  mt->mob->HoleMob(pa,na,T,dmax(0,Eppc),fabs(Etpc),T);
-
-    mt->mapping(&pzone->danode[B],&aux[B],0);
-    aux[B].mun =  mt->mob->ElecMob(pb,nb,T,dmax(0,Epnc),fabs(Etnc),T);
-    aux[B].mup =  mt->mob->HoleMob(pb,nb,T,dmax(0,Eppc),fabs(Etpc),T);
-  }
-  
-  mun = 0.5*(aux[A].mun+aux[B].mun);
-  mup = 0.5*(aux[A].mup+aux[B].mup);
-  
-#ifdef _IIC_
-  if(ImpactIonization && IIType==EdotJ)
-  {
-    IIn =  mt->gen->ElecGenRate(T,dmax(0,Epnc),Eg);
-    IIp =  mt->gen->HoleGenRate(T,dmax(0,Eppc),Eg);
-    G   =  IIn*mun*Jnc_norm*Jn_scale + IIp*mup*Jpc_norm*Jp_scale;
-  }
-  if( ImpactIonization && (IIType==GradQf || IIType==EVector) )
-  {
-    G = IIn*mun*fabs(phina-phinb)/ptri->edge_len[2]*nmid(Vt,Va,Vb,na,nb)
-       +IIp*mup*fabs(phipa-phipb)/ptri->edge_len[2]*pmid(Vt,Va,Vb,pa,pb);
-  }
-  if( ImpactIonization && IIType==ESide )
-  {
-    IIn =  mt->gen->ElecGenRate(T,fabs(Va-Vb)/ptri->edge_len[2],Eg);
-    IIp =  mt->gen->HoleGenRate(T,fabs(Va-Vb)/ptri->edge_len[2],Eg);
-    G = IIn*mun*fabs(Jnc)*Jn_scale + IIp*mup*fabs(Jpc)*Jp_scale;
-  }
-#endif
-  f[zofs[zone_index]+3*A+0] +=   0.5*(aux[A].eps+aux[B].eps)*(Vb-Va)/ptri->edge_len[2]*ptri->d[2];
-  f[zofs[zone_index]+3*A+1] +=   mun*Jnc*Jn_scale*ptri->d[2] + G*0.25*ptri->d[2]*ptri->edge_len[2];
-  f[zofs[zone_index]+3*A+2] += - mup*Jpc*Jp_scale*ptri->d[2] + G*0.25*ptri->d[2]*ptri->edge_len[2];
-
-  f[zofs[zone_index]+3*B+0] += - 0.5*(aux[A].eps+aux[B].eps)*(Vb-Va)/ptri->edge_len[2]*ptri->d[2];
-  f[zofs[zone_index]+3*B+1] += - mun*Jnc*Jn_scale*ptri->d[2] + G*0.25*ptri->d[2]*ptri->edge_len[2];
-  f[zofs[zone_index]+3*B+2] +=   mup*Jpc*Jp_scale*ptri->d[2] + G*0.25*ptri->d[2]*ptri->edge_len[2];
-
-  //flux along B-C
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
-    {
-      PetscScalar Jnax = ((Wab+Wac)*Sax - Wab*Mc*Sbx - Wac*Mb*Scx)*Jna
-                       + (Wab*Sbx - Wab*Mc*Sax)*Jnb
-                       + (Wac*Scx - Wac*Mb*Sax)*Jnc;
-      PetscScalar Jnay = ((Wab+Wac)*Say - Wab*Mc*Sby - Wac*Mb*Scy)*Jna
-                       + (Wab*Sby - Wab*Mc*Say)*Jnb
-                       + (Wac*Scy - Wac*Mb*Say)*Jnc;
-      PetscScalar Jpax = ((Wab+Wac)*Sax - Wab*Mc*Sbx - Wac*Mb*Scx)*Jpa
-                       + (Wab*Sbx - Wab*Mc*Sax)*Jpb
-                       + (Wac*Scx - Wac*Mb*Sax)*Jpc;
-      PetscScalar Jpay = ((Wab+Wac)*Say - Wab*Mc*Sby - Wac*Mb*Scy)*Jpa
-                       + (Wab*Sby - Wab*Mc*Say)*Jpb
-                       + (Wac*Scy - Wac*Mb*Say)*Jpc;
-      Jna_norm = sqrt(Jnax*Jnax + Jnay*Jnay + 1e-100);
-      Jpa_norm = sqrt(Jpax*Jpax + Jpay*Jpay + 1e-100);
-      Epna = (Ex*Jnax + Ey*Jnay)/Jna_norm;
-      Etna = (Ex*Jnay - Ey*Jnax)/Jna_norm;
-      Eppa = (Ex*Jpax + Ey*Jpay)/Jpa_norm;
-      Etpa = (Ex*Jpay - Ey*Jpax)/Jpa_norm;
-    }
-    else
-    {
-      Epna = fabs(Ecb-Ecc)/e/ptri->edge_len[0]; //parallel electrical field for electron
-      Eppa = fabs(Evb-Evc)/e/ptri->edge_len[0]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etna = fabs(Ecb + ptri->edge_len[2]*cos(ptri->angle[1])*(Ecc-Ecb)/ptri->edge_len[0] - Eca)
-           /(ptri->edge_len[2]*sin(ptri->angle[1]))/e;
-      Etpa = fabs(Evb + ptri->edge_len[2]*cos(ptri->angle[1])*(Evc-Evb)/ptri->edge_len[0] - Eva)
-           /(ptri->edge_len[2]*sin(ptri->angle[1]))/e;
-    }
-    mt->mapping(&pzone->danode[B],&aux[B],0);
-    aux[B].mun =  mt->mob->ElecMob(pb,nb,T,dmax(0,Epna),fabs(Etna),T);
-    aux[B].mup =  mt->mob->HoleMob(pb,nb,T,dmax(0,Eppa),fabs(Etpa),T);
-
-    mt->mapping(&pzone->danode[C],&aux[C],0);
-    aux[C].mun =  mt->mob->ElecMob(pc,nc,T,dmax(0,Epna),fabs(Etna),T);
-    aux[C].mup =  mt->mob->HoleMob(pc,nc,T,dmax(0,Eppa),fabs(Etpa),T);
-  }
-  mun = 0.5*(aux[B].mun+aux[C].mun);
-  mup = 0.5*(aux[B].mup+aux[C].mup);
-#ifdef _IIA_
-  if(ImpactIonization && IIType==EdotJ)
-  {
-    IIn =  mt->gen->ElecGenRate(T,dmax(0,Epna),Eg);
-    IIp =  mt->gen->HoleGenRate(T,dmax(0,Eppa),Eg);
-    G   =  IIn*mun*Jna_norm*Jn_scale + IIp*mup*Jpa_norm*Jp_scale;
-  }
-  if( ImpactIonization && (IIType==GradQf || IIType==EVector) )
-  {
-    G = IIn*mun*fabs(phinb-phinc)/ptri->edge_len[0]*nmid(Vt,Vb,Vc,nb,nc)
-       +IIp*mup*fabs(phipb-phipc)/ptri->edge_len[0]*pmid(Vt,Vb,Vc,pb,pc);
-  }
-  if( ImpactIonization && IIType==ESide )
-  {
-    IIn =  mt->gen->ElecGenRate(T,fabs(Vb-Vc)/ptri->edge_len[0],Eg);
-    IIp =  mt->gen->HoleGenRate(T,fabs(Vb-Vc)/ptri->edge_len[0],Eg);
-    G = IIn*mun*fabs(Jna)*Jn_scale + IIp*mup*fabs(Jpa)*Jp_scale;
-  }
-#endif
-  f[zofs[zone_index]+3*B+0] +=   0.5*(aux[B].eps+aux[C].eps)*(Vc-Vb)/ptri->edge_len[0]*ptri->d[0];
-  f[zofs[zone_index]+3*B+1] +=   mun*Jna*Jn_scale*ptri->d[0] + G*0.25*ptri->d[0]*ptri->edge_len[0];
-  f[zofs[zone_index]+3*B+2] += - mup*Jpa*Jp_scale*ptri->d[0] + G*0.25*ptri->d[0]*ptri->edge_len[0];
-
-  f[zofs[zone_index]+3*C+0] += - 0.5*(aux[B].eps+aux[C].eps)*(Vc-Vb)/ptri->edge_len[0]*ptri->d[0];
-  f[zofs[zone_index]+3*C+1] += - mun*Jna*Jn_scale*ptri->d[0] + G*0.25*ptri->d[0]*ptri->edge_len[0];
-  f[zofs[zone_index]+3*C+2] +=   mup*Jpa*Jp_scale*ptri->d[0] + G*0.25*ptri->d[0]*ptri->edge_len[0];
-
-  //flux along C-A
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
-    {
-      PetscScalar Jnbx = ((Wbc+Wba)*Sbx - Wbc*Ma*Scx - Wba*Mc*Sax)*Jnb
-                       + (Wbc*Scx - Wbc*Ma*Sbx)*Jnc
-                       + (Wba*Sax - Wba*Mc*Sbx)*Jna;
-      PetscScalar Jnby = ((Wbc+Wba)*Sby - Wbc*Ma*Scy - Wba*Mc*Say)*Jnb
-                       + (Wbc*Scy - Wbc*Ma*Sby)*Jnc
-                       + (Wba*Say - Wba*Mc*Sby)*Jna;
-      PetscScalar Jpbx = ((Wbc+Wba)*Sbx - Wbc*Ma*Scx - Wba*Mc*Sax)*Jpb
-                       + (Wbc*Scx - Wbc*Ma*Sbx)*Jpc
-                       + (Wba*Sax - Wba*Mc*Sbx)*Jpa;
-      PetscScalar Jpby = ((Wbc+Wba)*Sby - Wbc*Ma*Scy - Wba*Mc*Say)*Jpb
-                       + (Wbc*Scy - Wbc*Ma*Sby)*Jpc
-                       + (Wba*Say - Wba*Mc*Sby)*Jpa;
-      Jnb_norm = sqrt(Jnbx*Jnbx + Jnby*Jnby + 1e-100);
-      Jpb_norm = sqrt(Jpbx*Jpbx + Jpby*Jpby + 1e-100);
-      Epnb = (Ex*Jnbx + Ey*Jnby)/Jnb_norm;
-      Etnb = (Ex*Jnby - Ey*Jnbx)/Jnb_norm;
-      Eppb = (Ex*Jpbx + Ey*Jpby)/Jpb_norm;
-      Etpb = (Ex*Jpby - Ey*Jpbx)/Jpb_norm;
-  
-    }
-    else
-    {
-      Epnb = fabs(Ecc-Eca)/e/ptri->edge_len[1]; //parallel electrical field for electron
-      Eppb = fabs(Evc-Eva)/e/ptri->edge_len[1]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etnb = fabs(Ecc + ptri->edge_len[0]*cos(ptri->angle[2])*(Eca-Ecc)/ptri->edge_len[1] - Ecb)
-           /(ptri->edge_len[0]*sin(ptri->angle[2]))/e;
-      Etpb = fabs(Evc + ptri->edge_len[0]*cos(ptri->angle[2])*(Eva-Evc)/ptri->edge_len[1] - Evb)
-           /(ptri->edge_len[0]*sin(ptri->angle[2]))/e;
-    }
-    mt->mapping(&pzone->danode[C],&aux[C],0);
-    aux[C].mun =  mt->mob->ElecMob(pc,nc,T,dmax(0,Epnb),fabs(Etnb),T);
-    aux[C].mup =  mt->mob->HoleMob(pc,nc,T,dmax(0,Eppb),fabs(Etpb),T);
-
-    mt->mapping(&pzone->danode[A],&aux[A],0);
-    aux[A].mun =  mt->mob->ElecMob(pa,na,T,dmax(0,Epnb),fabs(Etnb),T);
-    aux[A].mup =  mt->mob->HoleMob(pa,na,T,dmax(0,Eppb),fabs(Etpb),T);
-  }
-  mun = 0.5*(aux[C].mun+aux[A].mun);
-  mup = 0.5*(aux[C].mup+aux[A].mup);
-#ifdef _IIB_
-  if(ImpactIonization && IIType==EdotJ)
-  {
-    IIn =  mt->gen->ElecGenRate(T,dmax(0,Epnb),Eg);
-    IIp =  mt->gen->HoleGenRate(T,dmax(0,Eppb),Eg);
-    G   =  IIn*mun*Jnb_norm*Jn_scale + IIp*mup*Jpb_norm*Jp_scale;
-  }
-  if( ImpactIonization && (IIType==GradQf || IIType==EVector) )
-  {
-    G = IIn*mun*fabs(phinc-phina)/ptri->edge_len[1]*nmid(Vt,Vc,Va,nc,na)
-       +IIp*mup*fabs(phipc-phipa)/ptri->edge_len[1]*pmid(Vt,Vc,Va,pc,pa);
-  }
-  if( ImpactIonization && IIType==ESide )
-  {
-    IIn =  mt->gen->ElecGenRate(T,fabs(Vc-Va)/ptri->edge_len[1],Eg);
-    IIp =  mt->gen->HoleGenRate(T,fabs(Vc-Va)/ptri->edge_len[1],Eg);
-    G = IIn*mun*fabs(Jnb)*Jn_scale + IIp*mup*fabs(Jpb)*Jp_scale;
-  }
-#endif
-  f[zofs[zone_index]+3*C+0] +=   0.5*(aux[C].eps+aux[A].eps)*(Va-Vc)/ptri->edge_len[1]*ptri->d[1];
-  f[zofs[zone_index]+3*C+1] +=   mun*Jnb*Jn_scale*ptri->d[1] + G*0.25*ptri->d[1]*ptri->edge_len[1];
-  f[zofs[zone_index]+3*C+2] += - mup*Jpb*Jp_scale*ptri->d[1] + G*0.25*ptri->d[1]*ptri->edge_len[1];
-
-  f[zofs[zone_index]+3*A+0] += - 0.5*(aux[C].eps+aux[A].eps)*(Va-Vc)/ptri->edge_len[1]*ptri->d[1];
-  f[zofs[zone_index]+3*A+1] += - mun*Jnb*Jn_scale*ptri->d[1] + G*0.25*ptri->d[1]*ptri->edge_len[1];
-  f[zofs[zone_index]+3*A+2] +=   mup*Jpb*Jp_scale*ptri->d[1] + G*0.25*ptri->d[1]*ptri->edge_len[1];
-
-  //optical carrier generation
-  f[zofs[zone_index]+3*A+1] +=  aux[A].RealOptG*ptri->s[0];
-  f[zofs[zone_index]+3*A+2] +=  aux[A].RealOptG*ptri->s[0];
-  f[zofs[zone_index]+3*B+1] +=  aux[B].RealOptG*ptri->s[1];
-  f[zofs[zone_index]+3*B+2] +=  aux[B].RealOptG*ptri->s[1];
-  f[zofs[zone_index]+3*C+1] +=  aux[C].RealOptG*ptri->s[2];
-  f[zofs[zone_index]+3*C+2] +=  aux[C].RealOptG*ptri->s[2];
-  
-  if(BandBandTunneling)
-  {
-    PetscScalar G_BB = mt->band->BB_Tunneling(T,E);
-    f[zofs[zone_index]+3*A+1] +=  G_BB*ptri->s[0];
-    f[zofs[zone_index]+3*A+2] +=  G_BB*ptri->s[0];
-    f[zofs[zone_index]+3*B+1] +=  G_BB*ptri->s[1];
-    f[zofs[zone_index]+3*B+2] +=  G_BB*ptri->s[1];
-    f[zofs[zone_index]+3*C+1] +=  G_BB*ptri->s[2];
-    f[zofs[zone_index]+3*C+2] +=  G_BB*ptri->s[2];
-  }
-  
-  //---------------------------------------------------------------------------
-  // Recombination item
-  //---------------------------------------------------------------------------
-  
-  S = 0.25*ptri->d[2]*ptri->edge_len[2] + 0.25*ptri->d[1]*ptri->edge_len[1];
-  f[zofs[zone_index]+3*A+1] += -Ra*S;
-  f[zofs[zone_index]+3*A+2] += -Ra*S;
-  
-  S = 0.25*ptri->d[0]*ptri->edge_len[0] + 0.25*ptri->d[2]*ptri->edge_len[2];
-  f[zofs[zone_index]+3*B+1] += -Rb*S;
-  f[zofs[zone_index]+3*B+2] += -Rb*S;
-  
-  S = 0.25*ptri->d[1]*ptri->edge_len[1] + 0.25*ptri->d[0]*ptri->edge_len[0];
-  f[zofs[zone_index]+3*C+1] += -Rc*S;
-  f[zofs[zone_index]+3*C+2] += -Rc*S;
-
-
-  
+  PetscScalar t;
+  t = a;
+  a = b;
+  b = c;
+  c = t;
 }
 
+void SMCZone::F1E_Tri_ddm(Tri *ptri, PetscScalar *x, PetscScalar *f, vector<int> &zofs)
+{
+  int A, B, C;
+  PetscScalar xA, xB, xC, yA, yB, yC;
+  PetscScalar Sax, Say, Sbx, Sby, Scx, Scy;
+  PetscScalar La, Lb, Lc;
+  PetscScalar da, db, dc;
+  PetscScalar cosA, cosB, cosC;
+  PetscScalar sinA, sinB, sinC;
+  PetscScalar tri_area, e, T, kb, Vt, Eg;
+  PetscScalar VA, VB, VC, nA, nB, nC, pA, pB, pC; // potential, electron and hole densities at nodes
+  PetscScalar EcA, EcB, EcC, EvA, EvB, EvC; // conduction band energy level
+  PetscScalar RA, RB, RC; // Recombination rates
+  PetscScalar niA, niB, niC;
+  PetscScalar Ex, Ey, E;
+  PetscScalar phinA, phinB, phinC; // quasi-fermi level for electrons
+  PetscScalar phipA, phipB, phipC; // quasi-fermi level for holes
+  PetscScalar Jna, Jnb, Jnc, Jpa, Jpb, Jpc;
+  PetscScalar Jn_scale, Jp_scale;
+
+  for (int pEdge = 0; pEdge < 3; pEdge++)
+  {
+    if (pEdge == 0) {
+      A = ptri->node[0]; B = ptri->node[1]; C = ptri->node[2];
+    } else {
+      int t; t=A; A=B; B=C; C=t;
+    }
+
+    if (pEdge == 0) {
+      xA = pzone->danode[ptri->node[0]].x;
+      xB = pzone->danode[ptri->node[1]].x;
+      xC = pzone->danode[ptri->node[2]].x;
+      yA = pzone->danode[ptri->node[0]].y;
+      yB = pzone->danode[ptri->node[1]].y;
+      yC = pzone->danode[ptri->node[2]].y;
+      Sax = (xC-xB)/ptri->edge_len[0];
+      Say = (yC-yB)/ptri->edge_len[0];
+      Sbx = (xA-xC)/ptri->edge_len[1];
+      Sby = (yA-yC)/ptri->edge_len[1];
+      Scx = (xB-xA)/ptri->edge_len[2];
+      Scy = (yB-yA)/ptri->edge_len[2];
+      La = ptri->edge_len[0];
+      Lb = ptri->edge_len[1];
+      Lc = ptri->edge_len[2];
+      da = ptri->d[0];
+      db = ptri->d[1];
+      dc = ptri->d[2];
+      cosA = cos(ptri->angle[0]);
+      cosB = cos(ptri->angle[1]);
+      cosC = cos(ptri->angle[2]);
+      sinA = sin(ptri->angle[0]);
+      sinB = sin(ptri->angle[1]);
+      sinC = sin(ptri->angle[2]);
+    } else {
+      rotate3Scalar(xA, xB, xC);
+      rotate3Scalar(yA, yB, yC);
+      rotate3Scalar(Sax,Sbx,Scx);
+      rotate3Scalar(Say,Sby,Scy);
+      rotate3Scalar(La,Lb,Lc);
+      rotate3Scalar(da,db,dc);
+      rotate3Scalar(cosA,cosB,cosC);
+      rotate3Scalar(sinA,sinB,sinC);
+    }
+
+    if (pEdge == 0) {
+      tri_area = ptri->area;
+      e  =  mt->e;
+      T  = (fs[A].T+fs[B].T+fs[C].T)/3.0;
+      kb = mt->kb;
+      Vt = mt->kb*T/e;
+      Eg = mt->band->Eg(T);
+    } else {
+    }
+
+    if (pEdge == 0) {
+      VA = x[zofs[zone_index]+3*A+0];     //potential of node A
+      nA = x[zofs[zone_index]+3*A+1];     //electron density of node A
+      pA = x[zofs[zone_index]+3*A+2];     //hole density of node A
+      VB = x[zofs[zone_index]+3*B+0];     //potential of node B
+      nB = x[zofs[zone_index]+3*B+1];     //electron density of node B
+      pB = x[zofs[zone_index]+3*B+2];     //hole density of node B
+      VC = x[zofs[zone_index]+3*C+0];     //potential of node C
+      nC = x[zofs[zone_index]+3*C+1];     //electron density of node C
+      pC = x[zofs[zone_index]+3*C+2];     //hole density of node C
+    } else {
+      rotate3Scalar(VA,VB,VC);
+      rotate3Scalar(nA,nB,nC);
+      rotate3Scalar(pA,pB,pC);
+    }
+
+    if (pEdge==0) {
+      mt->mapping(&pzone->danode[A],&aux[A],0);
+      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RA = mt->band->Recomb(pA,nA,fs[A].T);
+      niA = mt->band->nie(T);
+
+      mt->mapping(&pzone->danode[B],&aux[B],0);
+      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RB = mt->band->Recomb(pB,nB,fs[B].T);
+      niB = mt->band->nie(T);
+
+      mt->mapping(&pzone->danode[C],&aux[C],0);
+      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RC = mt->band->Recomb(pC,nC,fs[C].T);
+      niC = mt->band->nie(T);
+#ifdef _FERMI_  
+      if(Fermi)
+      {
+        PetscScalar NcA = mt->band->Nc(fs[A].T);
+        PetscScalar NvA = mt->band->Nv(fs[A].T);
+        EcA = EcA - e*Vt*log(gamma_f(fabs(nA)/NcA));
+        EvA = EvA + e*Vt*log(gamma_f(fabs(pA)/NvA));
+
+        PetscScalar NcB = mt->band->Nc(fs[B].T);
+        PetscScalar NvB = mt->band->Nv(fs[B].T);
+        EcB = EcB - e*Vt*log(gamma_f(fabs(nB)/NcB));
+        EvB = EvB + e*Vt*log(gamma_f(fabs(pB)/NvB));
+
+        PetscScalar NcC = mt->band->Nc(fs[C].T);
+        PetscScalar NvC = mt->band->Nv(fs[C].T);
+        EcC = EcC - e*Vt*log(gamma_f(fabs(nC)/NcC));
+        EvC = EvC + e*Vt*log(gamma_f(fabs(pC)/NvC));
+      }
+#endif 
+    } else {
+      rotate3Scalar(EcA,EcB,EcC);
+      rotate3Scalar(EvA,EvB,EvC);
+      rotate3Scalar(RA,RB,RC);
+      rotate3Scalar(niA,niB,niC);
+    } 
+
+    if(pEdge==0) {
+      Ex = -((yB-yC)*VA + (yC-yA)*VB +(yA-yB)*VC)/(2*tri_area);
+      Ey = -((xC-xB)*VA + (xA-xC)*VB +(xB-xA)*VC)/(2*tri_area);
+      E = sqrt(Ex*Ex+Ey*Ey+1e-20);
+    }
+    if(pEdge==0) {
+      phinA = VA - log(fabs(nA)/niA)*Vt;
+      phipA = VA + log(fabs(pA)/niA)*Vt;
+      phinB = VB - log(fabs(nB)/niB)*Vt;
+      phipB = VB + log(fabs(pB)/niB)*Vt;
+      phinC = VC - log(fabs(nC)/niC)*Vt;
+      phipC = VC + log(fabs(pC)/niC)*Vt;
+    } else {
+      rotate3Scalar(phinA,phinB,phinC);
+      rotate3Scalar(phipA,phipB,phipC);
+    }
+
+#ifdef _II_
+    PetscScalar IIn, IIp;
+    if(ImpactIonization) {
+      if(IIType==GradQf && pEdge==0)
+      {
+        PetscScalar Fnx = ((yB-yC)*phinA + (yC-yA)*phinB +(yA-yB)*phinC)/(2*tri_area);
+        PetscScalar Fny = ((xC-xB)*phinA + (xA-xC)*phinB +(xB-xA)*phinC)/(2*tri_area);
+        PetscScalar Fpx = ((yB-yC)*phipA + (yC-yA)*phipB +(yA-yB)*phipC)/(2*tri_area);
+        PetscScalar Fpy = ((xC-xB)*phipA + (xA-xC)*phipB +(xB-xA)*phipC)/(2*tri_area);
+        PetscScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
+        PetscScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
+        IIn =  mt->gen->ElecGenRate(T,Fn,Eg);
+        IIp =  mt->gen->HoleGenRate(T,Fp,Eg);
+      }
+      if(IIType==EVector && pEdge==0)
+      {
+        PetscScalar Fnx = Ex;
+        PetscScalar Fny = Ey;
+        PetscScalar Fpx = Ex;
+        PetscScalar Fpy = Ey;
+        PetscScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
+        PetscScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
+        IIn =  mt->gen->ElecGenRate(T,Fn,Eg);
+        IIp =  mt->gen->HoleGenRate(T,Fp,Eg);
+      }
+    }
+#endif
+
+#ifdef _FLUX1_
+    if(pEdge==0) {
+      Jnc =  In(Vt,EcA/e,EcB/e,nA,nB,Lc);
+      Jpc =  Ip(Vt,EvA/e,EvB/e,pA,pB,Lc);
+      Jna =  In(Vt,EcB/e,EcC/e,nB,nC,La);
+      Jpa =  Ip(Vt,EvB/e,EvC/e,pB,pC,La);
+      Jnb =  In(Vt,EcC/e,EcA/e,nC,nA,Lb);
+      Jpb =  Ip(Vt,EvC/e,EvA/e,pC,pA,Lb);
+      Jn_scale = dmax(dmax(fabs(Jna),fabs(Jnb)),dmax(fabs(Jnc),niA*niA));
+      Jp_scale = dmax(dmax(fabs(Jpa),fabs(Jpb)),dmax(fabs(Jpc),niA*niA));
+      Jnc /=  Jn_scale;
+      Jpc /=  Jp_scale;
+      Jna /=  Jn_scale;
+      Jpa /=  Jp_scale;
+      Jnb /=  Jn_scale;
+      Jpb /=  Jp_scale;
+    } else {
+      rotate3Scalar(Jna,Jnb,Jnc);
+      rotate3Scalar(Jpa,Jpb,Jpc);
+    }
+#endif
+#ifdef _FLUX2_
+    if(pEdge==0) {
+      Jnc =  In(Vt,(EcA-EcB)/e,nA,nB,Lc);
+      Jpc =  Ip(Vt,(EvA-EvB)/e,pA,pB,Lc);
+      Jna =  In(Vt,(EcB-EcC)/e,nB,nC,La);
+      Jpa =  Ip(Vt,(EvB-EvC)/e,pC,La);
+      Jnb =  In(Vt,(EcC-EcA)/e,nC,nA,Lb);
+      Jpb =  Ip(Vt,(EvC-EvA)/e,pC,pA,Lb);
+      Jn_scale = dmax(dmax(fabs(Jna),fabs(Jnb)),dmax(fabs(Jnc),niA*niA));
+      Jp_scale = dmax(dmax(fabs(Jpa),fabs(Jpb)),dmax(fabs(Jpc),niA*niA));
+      Jnc /=  Jn_scale;
+      Jpc /=  Jp_scale;
+      Jna /=  Jn_scale;
+      Jpa /=  Jp_scale;
+      Jnb /=  Jn_scale;
+      Jpb /=  Jp_scale;
+    } else {
+      rotate3Scalar(Jna,Jnb,Jnc);
+      rotate3Scalar(Jpa,Jpb,Jpc);
+    }
+#endif
+    //flux along A-B
+    PetscScalar Epnc, Etnc, Eppc, Etpc;
+    PetscScalar Jnc_norm, Jpc_norm;
+    PetscScalar mun, mup;
+    if(HighFieldMobility)
+    {
+      if(EJModel || IIType==EdotJ)
+      {
+
+        PetscScalar JncxTca  = (Jnc*Say - Jna*Scy)/sinB;
+        PetscScalar JncxTbc  = (Jnb*Scy - Jnc*Sby)/sinA;
+        PetscScalar Jncx = (da * JncxTca + db * JncxTbc)/(da+db);
+
+        PetscScalar JncyTca  = (-Jnc*Sax + Jna*Scx)/sinB;
+        PetscScalar JncyTbc  = (-Jnb*Scx + Jnc*Sbx)/sinA;
+        PetscScalar Jncy = (da * JncyTca + db * JncyTbc)/(da+db);
+
+        PetscScalar JpcxTca  = (Jpc*Say - Jpa*Scy)/sinB;
+        PetscScalar JpcxTbc  = (Jpb*Scy - Jpc*Sby)/sinA;
+        PetscScalar Jpcx = (da * JpcxTca + db * JpcxTbc)/(da+db);
+
+        PetscScalar JpcyTca  = (-Jpc*Sax + Jpa*Scx)/sinB;
+        PetscScalar JpcyTbc  = (-Jpb*Scx + Jpc*Sbx)/sinA;
+        PetscScalar Jpcy = (da * JpcyTca + db * JpcyTbc)/(da+db);
+
+        Jnc_norm = sqrt(Jncx*Jncx + Jncy*Jncy + 1e-100);
+        Jpc_norm = sqrt(Jpcx*Jpcx + Jpcy*Jpcy + 1e-100);
+        Epnc = (Ex*Jncx + Ey*Jncy)/Jnc_norm;
+        Etnc = (Ex*Jncy - Ey*Jncx)/Jnc_norm;
+        Eppc = (Ex*Jpcx + Ey*Jpcy)/Jpc_norm;
+        Etpc = (Ex*Jpcy - Ey*Jpcx)/Jpc_norm;
+      }
+      else
+      {
+        Epnc = fabs(EcA-EcB)/e/Lc; //parallel electrical field for electron
+        Eppc = fabs(EvA-EvB)/e/Lc; //parallel electrical field for hole
+        //transvers electrical field for electron and hole
+        Etnc = fabs(EcA + Lb*cosA*(EcB-EcA)/Lc - EcC)/(Lb*sinA)/e;
+        Etpc = fabs(EvA + Lb*cosA*(EvB-EvA)/Lc - EvC)/(Lb*sinA)/e;
+      }
+
+      mt->mapping(&pzone->danode[A],&aux[A],0);
+      aux[A].mun =  mt->mob->ElecMob(pA,nA,T,dmax(0,Epnc),fabs(Etnc),T);
+      aux[A].mup =  mt->mob->HoleMob(pA,nA,T,dmax(0,Eppc),fabs(Etpc),T);
+
+      mt->mapping(&pzone->danode[B],&aux[B],0);
+      aux[B].mun =  mt->mob->ElecMob(pB,nB,T,dmax(0,Epnc),fabs(Etnc),T);
+      aux[B].mup =  mt->mob->HoleMob(pB,nB,T,dmax(0,Eppc),fabs(Etpc),T);
+    }  
+    mun = 0.5*(aux[A].mun+aux[B].mun);
+    mup = 0.5*(aux[A].mup+aux[B].mup);
+
+    PetscScalar G=0;
+#ifdef _II_
+    if(ImpactIonization && IIType==EdotJ)
+    {
+      IIn =  mt->gen->ElecGenRate(T,dmax(0,Epnc),Eg);
+      IIp =  mt->gen->HoleGenRate(T,dmax(0,Eppc),Eg);
+      G   =  IIn*mun*Jnc_norm*Jn_scale + IIp*mup*Jpc_norm*Jp_scale;
+    }
+    if( ImpactIonization && (IIType==GradQf || IIType==EVector) )
+    {
+      G = IIn*mun*fabs(phinA-phinB)/Lc*nmid(Vt,fs[A].P,fs[B].P,fs[A].n,fs[B].n)
+        +IIp*mup*fabs(phipA-phipB)/Lc*pmid(Vt,fs[A].P,fs[B].P,fs[A].p,fs[B].p);
+      G = IIn*mun*fabs(phinA-phinB)/Lc*nmid(Vt,VA,VB,nA,nB)
+        +IIp*mup*fabs(phipA-phipB)/Lc*pmid(Vt,VA,VB,pA,pB);
+    }
+    if( ImpactIonization && IIType==ESide )
+    {
+      IIn =  mt->gen->ElecGenRate(T,fabs(VA-VB)/Lc,Eg);
+      IIp =  mt->gen->HoleGenRate(T,fabs(VA-VB)/Lc,Eg);
+      G = IIn*mun*fabs(Jnc)*Jn_scale + IIp*mup*fabs(Jpc)*Jp_scale;
+    }
+#endif
+
+    f[zofs[zone_index]+3*A+0] +=   0.5*(aux[A].eps+aux[B].eps)*(VB-VA)/Lc*dc;
+    f[zofs[zone_index]+3*A+1] +=   mun*Jnc*Jn_scale*dc + G*0.25*dc*Lc;
+    f[zofs[zone_index]+3*A+2] += - mup*Jpc*Jp_scale*dc + G*0.25*dc*Lc;
+
+    f[zofs[zone_index]+3*B+0] += - 0.5*(aux[A].eps+aux[B].eps)*(VB-VA)/Lc*dc;
+    f[zofs[zone_index]+3*B+1] += - mun*Jnc*Jn_scale*dc + G*0.25*dc*Lc;
+    f[zofs[zone_index]+3*B+2] +=   mup*Jpc*Jp_scale*dc + G*0.25*dc*Lc;
+
+//Generation at A
+#ifdef _HURKX_BTBT_
+    if (BandBandTunneling)
+    {
+      PetscScalar S = 0.25*dc*Lc + 0.25*db*Lb;
+
+      PetscScalar GradQfnx = -((yB-yC)*phinA + (yC-yA)*phinB +(yA-yB)*phinC)/(2*tri_area);
+      PetscScalar GradQfny = -((xC-xB)*phinA + (xA-xC)*phinB +(xB-xA)*phinC)/(2*tri_area);
+      PetscScalar GradQfn = sqrt(GradQfnx*GradQfnx+GradQfny*GradQfny+1e-20);
+
+      PetscScalar GradQfpx = -((yB-yC)*phipA + (yC-yA)*phipB +(yA-yB)*phipC)/(2*tri_area);
+      PetscScalar GradQfpy = -((xC-xB)*phipA + (xA-xC)*phipB +(xB-xA)*phipC)/(2*tri_area);
+      PetscScalar GradQfp = sqrt(GradQfpx*GradQfpx+GradQfpy*GradQfpy+1e-20);
+
+      PetscScalar nn = nA * pow(niA / mt->band->Nc(fs[A].T), GradQfn/E );
+      PetscScalar pp = pA * pow(niA / mt->band->Nv(fs[A].T), GradQfp/E );
+
+      PetscScalar D = (niA*niA - nn*pp)/(niA+nn)/(niA+pp);
+      PetscScalar D1 = (GradQfnx*GradQfpx + GradQfny*GradQfpy)/GradQfn/GradQfp;
+      PetscScalar G_BB = D*mt->band->BB_Tunneling(T,E);
+
+      f[zofs[zone_index]+3*A+1] += G_BB*S;
+      f[zofs[zone_index]+3*A+2] += G_BB*S;
+    }
+#endif
+ 
+    if(pEdge==0) {
+      //optical carrier generation
+      f[zofs[zone_index]+3*A+1] +=  aux[A].RealOptG*ptri->s[0];
+      f[zofs[zone_index]+3*A+2] +=  aux[A].RealOptG*ptri->s[0];
+      f[zofs[zone_index]+3*B+1] +=  aux[B].RealOptG*ptri->s[1];
+      f[zofs[zone_index]+3*B+2] +=  aux[B].RealOptG*ptri->s[1];
+      f[zofs[zone_index]+3*C+1] +=  aux[C].RealOptG*ptri->s[2];
+      f[zofs[zone_index]+3*C+2] +=  aux[C].RealOptG*ptri->s[2];
+
+#ifndef _HURKX_BTBT_
+      if(BandBandTunneling)
+      {
+        PetscScalar G_BB = mt->band->BB_Tunneling(T,E);
+        f[zofs[zone_index]+3*A+1] +=  G_BB*ptri->s[0];
+        f[zofs[zone_index]+3*A+2] +=  G_BB*ptri->s[0];
+        f[zofs[zone_index]+3*B+1] +=  G_BB*ptri->s[1];
+        f[zofs[zone_index]+3*B+2] +=  G_BB*ptri->s[1];
+        f[zofs[zone_index]+3*C+1] +=  G_BB*ptri->s[2];
+        f[zofs[zone_index]+3*C+2] +=  G_BB*ptri->s[2];
+      }
+#endif
+
+      //---------------------------------------------------------------------------
+      // Recombination item
+      //---------------------------------------------------------------------------
+      PetscScalar S;
+      S = 0.25*dc*Lc + 0.25*db*Lb;
+      f[zofs[zone_index]+3*A+1] += -RA*S;
+      f[zofs[zone_index]+3*A+2] += -RA*S;
+
+      S = 0.25*da*La + 0.25*dc*Lc;
+      f[zofs[zone_index]+3*B+1] += -RB*S;
+      f[zofs[zone_index]+3*B+2] += -RB*S;
+
+      S = 0.25*db*Lb + 0.25*da*La;
+      f[zofs[zone_index]+3*C+1] += -RC*S;
+      f[zofs[zone_index]+3*C+2] += -RC*S;
+
+    }
+
+  }
+}
+
+void rotate3ADScalar( AutoDScalar& a, AutoDScalar& b, AutoDScalar& c) 
+{
+  AutoDScalar t=a;
+  a = b;
+  b = c;
+  c = t;
+}
 
 
 void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs)
 {
-  int z = zone_index;
-  int A = ptri->node[0];
-  int B = ptri->node[1];
-  int C = ptri->node[2];
-  
-  PetscScalar xa = pzone->danode[ptri->node[0]].x;
-  PetscScalar xb = pzone->danode[ptri->node[1]].x;
-  PetscScalar xc = pzone->danode[ptri->node[2]].x;
-  PetscScalar ya = pzone->danode[ptri->node[0]].y;
-  PetscScalar yb = pzone->danode[ptri->node[1]].y;
-  PetscScalar yc = pzone->danode[ptri->node[2]].y;
-  PetscScalar tri_area = ptri->area;
-  PetscScalar Sax = (xc-xb)/ptri->edge_len[0];
-  PetscScalar Say = (yc-yb)/ptri->edge_len[0];
-  PetscScalar Sbx = (xa-xc)/ptri->edge_len[1];
-  PetscScalar Sby = (ya-yc)/ptri->edge_len[1];
-  PetscScalar Scx = (xb-xa)/ptri->edge_len[2];
-  PetscScalar Scy = (yb-ya)/ptri->edge_len[2];
-  PetscScalar Wab = ptri->d[1]/((ptri->d[1]+ptri->d[2])*sin(ptri->angle[2])*sin(ptri->angle[2]));
-  PetscScalar Wac = ptri->d[2]/((ptri->d[1]+ptri->d[2])*sin(ptri->angle[1])*sin(ptri->angle[1]));
-  PetscScalar Wbc = ptri->d[2]/((ptri->d[0]+ptri->d[2])*sin(ptri->angle[0])*sin(ptri->angle[0]));
-  PetscScalar Wba = ptri->d[0]/((ptri->d[0]+ptri->d[2])*sin(ptri->angle[2])*sin(ptri->angle[2]));
-  PetscScalar Wca = ptri->d[0]/((ptri->d[0]+ptri->d[1])*sin(ptri->angle[1])*sin(ptri->angle[1]));
-  PetscScalar Wcb = ptri->d[1]/((ptri->d[0]+ptri->d[1])*sin(ptri->angle[0])*sin(ptri->angle[0]));
-  PetscScalar Ma  = -cos(ptri->angle[0]);
-  PetscScalar Mb  = -cos(ptri->angle[1]);
-  PetscScalar Mc  = -cos(ptri->angle[2]);
-  
+  int A, B, C;
+  PetscScalar xA, xB, xC, yA, yB, yC;
+  PetscScalar Sax, Say, Sbx, Sby, Scx, Scy;
+  PetscScalar La, Lb, Lc;
+  PetscScalar da, db, dc;
+  PetscScalar cosA, cosB, cosC;
+  PetscScalar sinA, sinB, sinC;
+
+  AutoDScalar VA, VB, VC, nA, nB, nC, pA, pB, pC; // potential, electron and hole densities at nodes
+  AutoDScalar EcA, EcB, EcC, EvA, EvB, EvC; // conduction band energy level
+  AutoDScalar RA, RB, RC; // Recombination rates
+  PetscScalar niA, niB, niC;
+  AutoDScalar Ex, Ey, E;
+  AutoDScalar phinA, phinB, phinC; // quasi-fermi level for electrons
+  AutoDScalar phipA, phipB, phipC; // quasi-fermi level for electrons
+  AutoDScalar Jna, Jnb, Jnc, Jpa, Jpb, Jpc;
+  PetscScalar Jn_scale, Jp_scale;
+  AutoDScalar TD;
+
   Mat3       J1,J2,J3;
   Vec3       scale;
   PetscInt   index1[3],index2[3],index3[3];
-  index1[0] = zofs[z]+3*A+0;
-  index1[1] = zofs[z]+3*A+1;
-  index1[2] = zofs[z]+3*A+2;
-  index2[0] = zofs[z]+3*B+0;
-  index2[1] = zofs[z]+3*B+1;
-  index2[2] = zofs[z]+3*B+2;
-  index3[0] = zofs[z]+3*C+0;
-  index3[1] = zofs[z]+3*C+1;
-  index3[2] = zofs[z]+3*C+2;
+  int offset1, offset2, offset3;
 
-  //---------------------------------------------------------------------------
+  for (int pEdge = 0; pEdge < 3; pEdge++)
+  {
+    if (pEdge == 0) {
+      A = ptri->node[0]; B = ptri->node[1]; C = ptri->node[2];
+      offset1=0; offset2=3; offset3=6;
+    } else {
+      int t; t=A; A=B; B=C; C=t;
+      t=offset1; offset1=offset2; offset2=offset3; offset3=t;
+    }
 
-  PetscScalar kb = mt->kb;
-  PetscScalar e  =  mt->e;
-  PetscScalar T  = (fs[A].T+fs[B].T+fs[C].T)/3.0;
-  PetscScalar Eg = mt->band->Eg(T);
-  PetscScalar Vt = kb*T/e;
-  PetscScalar S;
-   
-  //the indepedent variable number
-  adtl::AutoDScalar::numdir=9;
-  //synchronize with material database
-  mt->set_ad_num(adtl::AutoDScalar::numdir); 
-  AutoDScalar TD = T; // dummy ad variable.
-  
-  AutoDScalar Va = x[zofs[zone_index]+3*A+0];     //potential of node A
-  AutoDScalar na = x[zofs[zone_index]+3*A+1];     //electron density of node A
-  AutoDScalar pa = x[zofs[zone_index]+3*A+2];     //hole density of node A
-  Va.setADValue(0,1.0);
-  na.setADValue(1,1.0);
-  pa.setADValue(2,1.0);
-  mt->mapping(&pzone->danode[A],&aux[A],0);
-  AutoDScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  AutoDScalar Ra = mt->band->Recomb(pa,na,TD);
-  PetscScalar etana;
-  PetscScalar etapa;
-  PetscScalar Nca;
-  PetscScalar Nva;
-  PetscScalar nia = mt->band->nie(T);
+
+    if (pEdge == 0) {
+      xA = pzone->danode[ptri->node[0]].x;
+      xB = pzone->danode[ptri->node[1]].x;
+      xC = pzone->danode[ptri->node[2]].x;
+      yA = pzone->danode[ptri->node[0]].y;
+      yB = pzone->danode[ptri->node[1]].y;
+      yC = pzone->danode[ptri->node[2]].y;
+      Sax = (xC-xB)/ptri->edge_len[0];
+      Say = (yC-yB)/ptri->edge_len[0];
+      Sbx = (xA-xC)/ptri->edge_len[1];
+      Sby = (yA-yC)/ptri->edge_len[1];
+      Scx = (xB-xA)/ptri->edge_len[2];
+      Scy = (yB-yA)/ptri->edge_len[2];
+      La = ptri->edge_len[0];
+      Lb = ptri->edge_len[1];
+      Lc = ptri->edge_len[2];
+      da = ptri->d[0];
+      db = ptri->d[1];
+      dc = ptri->d[2];
+      cosA = cos(ptri->angle[0]);
+      cosB = cos(ptri->angle[1]);
+      cosC = cos(ptri->angle[2]);
+      sinA = sin(ptri->angle[0]);
+      sinB = sin(ptri->angle[1]);
+      sinC = sin(ptri->angle[2]);
+    } else {
+      rotate3Scalar(xA, xB, xC);
+      rotate3Scalar(yA, yB, yC);
+      rotate3Scalar(Sax,Sbx,Scx);
+      rotate3Scalar(Say,Sby,Scy);
+      rotate3Scalar(La,Lb,Lc);
+      rotate3Scalar(da,db,dc);
+      rotate3Scalar(cosA,cosB,cosC);
+      rotate3Scalar(sinA,sinB,sinC);
+    }
+
+    PetscScalar tri_area, e, T, kb, Vt, Eg;
+    if (pEdge == 0) {
+      tri_area = ptri->area;
+      e  =  mt->e;
+      T  = (fs[A].T+fs[B].T+fs[C].T)/3.0;
+      kb = mt->kb;
+      Vt = mt->kb*T/e;
+      Eg = mt->band->Eg(T);
+    } else {
+    }
+
+    int z = zone_index;
+    index1[0] = zofs[z]+3*A+0;
+    index1[1] = zofs[z]+3*A+1;
+    index1[2] = zofs[z]+3*A+2;
+    index2[0] = zofs[z]+3*B+0;
+    index2[1] = zofs[z]+3*B+1;
+    index2[2] = zofs[z]+3*B+2;
+    index3[0] = zofs[z]+3*C+0;
+    index3[1] = zofs[z]+3*C+1;
+    index3[2] = zofs[z]+3*C+2;
+
+    if (pEdge==0) {
+      //the indepedent variable number
+      adtl::AutoDScalar::numdir=9;
+      //synchronize with material database
+      mt->set_ad_num(adtl::AutoDScalar::numdir); 
+      TD = T; // dummy ad variable.
+
+      VA = x[zofs[zone_index]+3*A+0];     //potential of node A
+      nA = x[zofs[zone_index]+3*A+1];     //electron density of node A
+      pA = x[zofs[zone_index]+3*A+2];     //hole density of node A
+      VB = x[zofs[zone_index]+3*B+0];     //potential of node B
+      nB = x[zofs[zone_index]+3*B+1];     //electron density of node B
+      pB = x[zofs[zone_index]+3*B+2];     //hole density of node B
+      VC = x[zofs[zone_index]+3*C+0];     //potential of node C
+      nC = x[zofs[zone_index]+3*C+1];     //electron density of node C
+      pC = x[zofs[zone_index]+3*C+2];     //hole density of node C
+      VA.setADValue(0,1.0);
+      nA.setADValue(1,1.0);
+      pA.setADValue(2,1.0);
+      VB.setADValue(3,1.0);
+      nB.setADValue(4,1.0);
+      pB.setADValue(5,1.0);
+      VC.setADValue(6,1.0);
+      nC.setADValue(7,1.0);
+      pC.setADValue(8,1.0);
+    }else{
+      rotate3ADScalar(VA,VB,VC);
+      rotate3ADScalar(nA,nB,nC);
+      rotate3ADScalar(pA,pB,pC);
+    }
+
+    if (pEdge==0) {
+      mt->mapping(&pzone->danode[A],&aux[A],0);
+      EcA = -(e*VA + aux[A].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvA = -(e*VA + aux[A].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RA = mt->band->Recomb(pA,nA,TD);
+      niA = mt->band->nie(T);
+
+      mt->mapping(&pzone->danode[B],&aux[B],0);
+      EcB = -(e*VB + aux[B].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvB = -(e*VB + aux[B].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RB = mt->band->Recomb(pB,nB,TD);
+      niB = mt->band->nie(T);
+
+      mt->mapping(&pzone->danode[C],&aux[C],0);
+      EcC = -(e*VC + aux[C].affinity + mt->band->EgNarrowToEc(T));//conduction band energy level
+      EvC = -(e*VC + aux[C].affinity - mt->band->EgNarrowToEv(T) + Eg);//valence band energy level
+      RC = mt->band->Recomb(pC,nC,TD);
+      niC = mt->band->nie(T);
 #ifdef _FERMI_  
-  if(Fermi)
-  {
-    Nca = mt->band->Nc(fs[A].T);
-    Nva = mt->band->Nv(fs[A].T);
-    Eca = Eca - e*Vt*log(gamma_f(fabs(na)/Nca));
-    Eva = Eva + e*Vt*log(gamma_f(fabs(pa)/Nva));
-  }
-#endif    
-  AutoDScalar phina;
-  AutoDScalar phipa;
+      if(Fermi)
+      {
+        PetscScalar NcA = mt->band->Nc(fs[A].T);
+        PetscScalar NvA = mt->band->Nv(fs[A].T);
+        EcA = EcA - e*Vt*log(gamma_f(fabs(nA)/NcA));
+        EvA = EvA + e*Vt*log(gamma_f(fabs(pA)/NvA));
 
-  AutoDScalar Vb = x[zofs[zone_index]+3*B+0];     //potential of node B
-  AutoDScalar nb = x[zofs[zone_index]+3*B+1];     //electron density of node B
-  AutoDScalar pb = x[zofs[zone_index]+3*B+2];     //hole density of node B
-  Vb.setADValue(3,1.0);
-  nb.setADValue(4,1.0);
-  pb.setADValue(5,1.0);
-  mt->mapping(&pzone->danode[B],&aux[B],0);
-  AutoDScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  AutoDScalar Rb = mt->band->Recomb(pb,nb,TD);
-  PetscScalar etanb; 
-  PetscScalar etapb; 
-  PetscScalar Ncb;
-  PetscScalar Nvb;
-  PetscScalar nib = mt->band->nie(T);
-#ifdef _FERMI_    
-  if(Fermi)
-  {
-    Ncb = mt->band->Nc(fs[B].T);
-    Nvb = mt->band->Nv(fs[B].T);
-    Ecb = Ecb - e*Vt*log(gamma_f(fabs(nb)/Ncb));
-    Evb = Evb + e*Vt*log(gamma_f(fabs(pb)/Nvb));
-  }
-#endif    
-  AutoDScalar phinb;
-  AutoDScalar phipb;
+        PetscScalar NcB = mt->band->Nc(fs[B].T);
+        PetscScalar NvB = mt->band->Nv(fs[B].T);
+        EcB = EcB - e*Vt*log(gamma_f(fabs(nB)/NcB));
+        EvB = EvB + e*Vt*log(gamma_f(fabs(pB)/NvB));
 
-  AutoDScalar Vc = x[zofs[zone_index]+3*C+0];     //potential of node C
-  AutoDScalar nc = x[zofs[zone_index]+3*C+1];     //electron density of node C
-  AutoDScalar pc = x[zofs[zone_index]+3*C+2];     //hole density of node C
-  Vc.setADValue(6,1.0);
-  nc.setADValue(7,1.0);
-  pc.setADValue(8,1.0);
-  mt->mapping(&pzone->danode[C],&aux[C],0);
-  AutoDScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
-  AutoDScalar Rc = mt->band->Recomb(pc,nc,TD);
-  PetscScalar etanc;
-  PetscScalar etapc;
-  PetscScalar Ncc; 
-  PetscScalar Nvc; 
-  PetscScalar nic = mt->band->nie(T);
-#ifdef _FERMI_    
-  if(Fermi)
-  {
-    Ncc = mt->band->Nc(fs[C].T);
-    Nvc = mt->band->Nv(fs[C].T);
-    Ecc = Ecc - e*Vt*log(gamma_f(fabs(nc)/Ncc));
-    Evc = Evc + e*Vt*log(gamma_f(fabs(pc)/Nvc));
-  }
-#endif    
-  AutoDScalar phinc;
-  AutoDScalar phipc;
+        PetscScalar NcC = mt->band->Nc(fs[C].T);
+        PetscScalar NvC = mt->band->Nv(fs[C].T);
+        EcC = EcC - e*Vt*log(gamma_f(fabs(nC)/NcC));
+        EvC = EvC + e*Vt*log(gamma_f(fabs(pC)/NvC));
+      }
+#endif 
+    } else {
+      rotate3ADScalar(EcA,EcB,EcC);
+      rotate3ADScalar(EvA,EvB,EvC);
+      rotate3ADScalar(RA,RB,RC);
+      rotate3Scalar(niA,niB,niC);
+    } 
 
-  AutoDScalar Ex = -((yb-yc)*Va + (yc-ya)*Vb +(ya-yb)*Vc)/(2*tri_area);
-  AutoDScalar Ey = -((xc-xb)*Va + (xa-xc)*Vb +(xb-xa)*Vc)/(2*tri_area);
-  AutoDScalar E = sqrt(Ex*Ex+Ey*Ey+1e-20);
+    if(pEdge==0) {
+      Ex = -((yB-yC)*VA + (yC-yA)*VB +(yA-yB)*VC)/(2*tri_area);
+      Ey = -((xC-xB)*VA + (xA-xC)*VB +(xB-xA)*VC)/(2*tri_area);
+      E = sqrt(Ex*Ex+Ey*Ey+1e-20);
+    }
+    if(pEdge==0) {
+      phinA = VA - log(fabs(nA)/niA)*Vt;
+      phipA = VA + log(fabs(pA)/niA)*Vt;
+      phinB = VB - log(fabs(nB)/niB)*Vt;
+      phipB = VB + log(fabs(pB)/niB)*Vt;
+      phinC = VC - log(fabs(nC)/niC)*Vt;
+      phipC = VC + log(fabs(pC)/niC)*Vt;
+    } else {
+      rotate3ADScalar(phinA,phinB,phinC);
+      rotate3ADScalar(phipA,phipB,phipC);
+    }
 
-  AutoDScalar G = 0;
-  AutoDScalar IIn=0,IIp=0;
-  AutoDScalar mun,mup;
-  AutoDScalar Epnc=0,Etnc=0;
-  AutoDScalar Eppc=0,Etpc=0;
-  AutoDScalar Epna=0,Etna=0;
-  AutoDScalar Eppa=0,Etpa=0;
-  AutoDScalar Epnb=0,Etnb=0;
-  AutoDScalar Eppb=0,Etpb=0;
-  AutoDScalar Jna_norm=0,Jpa_norm=0;
-  AutoDScalar Jnb_norm=0,Jpb_norm=0;
-  AutoDScalar Jnc_norm=0,Jpc_norm=0;
-  
 #ifdef _II_
-  if(ImpactIonization && IIType==GradQf)
-  {
-    phina = Va - log(fabs(na)/nia)*Vt;
-    phipa = Va + log(fabs(pa)/nia)*Vt;
-    phinb = Vb - log(fabs(nb)/nib)*Vt;
-    phipb = Vb + log(fabs(pb)/nib)*Vt;
-    phinc = Vc - log(fabs(nc)/nic)*Vt;
-    phipc = Vc + log(fabs(pc)/nic)*Vt;
-  
-    AutoDScalar Fnx = ((yb-yc)*phina + (yc-ya)*phinb +(ya-yb)*phinc)/(2*tri_area);
-    AutoDScalar Fny = ((xc-xb)*phina + (xa-xc)*phinb +(xb-xa)*phinc)/(2*tri_area);
-    AutoDScalar Fpx = ((yb-yc)*phipa + (yc-ya)*phipb +(ya-yb)*phipc)/(2*tri_area);
-    AutoDScalar Fpy = ((xc-xb)*phipa + (xa-xc)*phipb +(xb-xa)*phipc)/(2*tri_area);
-    AutoDScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
-    AutoDScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
-    IIn =  mt->gen->ElecGenRate(TD,Fn,Eg);
-    IIp =  mt->gen->HoleGenRate(TD,Fp,Eg);
-  }
-
-  if(ImpactIonization && IIType==EVector)
-  {
-    phina = Va - log(fabs(na)/nia)*Vt;
-    phipa = Va + log(fabs(pa)/nia)*Vt;
-    phinb = Vb - log(fabs(nb)/nib)*Vt;
-    phipb = Vb + log(fabs(pb)/nib)*Vt;
-    phinc = Vc - log(fabs(nc)/nic)*Vt;
-    phipc = Vc + log(fabs(pc)/nic)*Vt;
-    AutoDScalar Fnx = Ex;
-    AutoDScalar Fny = Ey;
-    AutoDScalar Fpx = Ex;
-    AutoDScalar Fpy = Ey;
-    AutoDScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
-    AutoDScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
-    IIn =  mt->gen->ElecGenRate(T,Fn,Eg);
-    IIp =  mt->gen->HoleGenRate(T,Fp,Eg);
-  }
-#endif  
+    AutoDScalar IIn, IIp;
+    if(ImpactIonization) {
+      if(IIType==GradQf && pEdge==0)
+      {
+        AutoDScalar Fnx = ((yB-yC)*phinA + (yC-yA)*phinB +(yA-yB)*phinC)/(2*tri_area);
+        AutoDScalar Fny = ((xC-xB)*phinA + (xA-xC)*phinB +(xB-xA)*phinC)/(2*tri_area);
+        AutoDScalar Fpx = ((yB-yC)*phipA + (yC-yA)*phipB +(yA-yB)*phipC)/(2*tri_area);
+        AutoDScalar Fpy = ((xC-xB)*phipA + (xA-xC)*phipB +(xB-xA)*phipC)/(2*tri_area);
+        AutoDScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
+        AutoDScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
+        IIn =  mt->gen->ElecGenRate(TD,Fn,Eg);
+        IIp =  mt->gen->HoleGenRate(TD,Fp,Eg);
+      }
+      if(IIType==EVector && pEdge==0)
+      {
+        AutoDScalar Fnx = Ex;
+        AutoDScalar Fny = Ey;
+        AutoDScalar Fpx = Ex;
+        AutoDScalar Fpy = Ey;
+        AutoDScalar Fn  =  sqrt(Fnx*Fnx+Fny*Fny);
+        AutoDScalar Fp  =  sqrt(Fpx*Fpx+Fpy*Fpy);
+        IIn =  mt->gen->ElecGenRate(TD,Fn,Eg);
+        IIp =  mt->gen->HoleGenRate(TD,Fp,Eg);
+      }
+    }
+#endif
 #ifdef _FLUX1_
-  AutoDScalar Jnc =  In(Vt,Eca/e,Ecb/e,na,nb,ptri->edge_len[2]);
-  AutoDScalar Jpc =  Ip(Vt,Eva/e,Evb/e,pa,pb,ptri->edge_len[2]);
-  AutoDScalar Jna =  In(Vt,Ecb/e,Ecc/e,nb,nc,ptri->edge_len[0]);
-  AutoDScalar Jpa =  Ip(Vt,Evb/e,Evc/e,pb,pc,ptri->edge_len[0]);
-  AutoDScalar Jnb =  In(Vt,Ecc/e,Eca/e,nc,na,ptri->edge_len[1]);
-  AutoDScalar Jpb =  Ip(Vt,Evc/e,Eva/e,pc,pa,ptri->edge_len[1]);
-  PetscScalar Jn_scale = adtl::fmax(adtl::fmax(fabs(Jna.getValue()),fabs(Jnb.getValue())),
-                                    adtl::fmax(fabs(Jnc.getValue()),nia*nia));
-  PetscScalar Jp_scale = adtl::fmax(adtl::fmax(fabs(Jpa.getValue()),fabs(Jpb.getValue())),
-                                    adtl::fmax(fabs(Jpc.getValue()),nia*nia));
-  
-  Jnc =  Jnc/Jn_scale;
-  Jpc =  Jpc/Jp_scale;
-  Jna =  Jna/Jn_scale;
-  Jpa =  Jpa/Jp_scale;
-  Jnb =  Jnb/Jn_scale;
-  Jpb =  Jpb/Jp_scale;
-
+    if(pEdge==0) {
+      Jnc =  In(Vt,EcA/e,EcB/e,nA,nB,Lc);
+      Jpc =  Ip(Vt,EvA/e,EvB/e,pA,pB,Lc);
+      Jna =  In(Vt,EcB/e,EcC/e,nB,nC,La);
+      Jpa =  Ip(Vt,EvB/e,EvC/e,pB,pC,La);
+      Jnb =  In(Vt,EcC/e,EcA/e,nC,nA,Lb);
+      Jpb =  Ip(Vt,EvC/e,EvA/e,pC,pA,Lb);
+      Jn_scale = adtl::fmax(adtl::fmax(fabs(Jna.getValue()),fabs(Jnb.getValue())),
+                           adtl::fmax(fabs(Jnc.getValue()),niA*niA));
+      Jp_scale = adtl::fmax(adtl::fmax(fabs(Jpa.getValue()),fabs(Jpb.getValue())),
+                           adtl::fmax(fabs(Jpc.getValue()),niA*niA));
+      Jnc /=  Jn_scale;
+      Jpc /=  Jp_scale;
+      Jna /=  Jn_scale;
+      Jpa /=  Jp_scale;
+      Jnb /=  Jn_scale;
+      Jpb /=  Jp_scale;
+    } else {
+      rotate3ADScalar(Jna,Jnb,Jnc);
+      rotate3ADScalar(Jpa,Jpb,Jpc);
+    }
 #endif
 #ifdef _FLUX2_
-  AutoDScalar Jnc =  In(Vt,(Ecb-Eca)/e,na,nb,ptri->edge_len[2]);
-  AutoDScalar Jpc =  Ip(Vt,(Evb-Eva)/e,pa,pb,ptri->edge_len[2]);
-  AutoDScalar Jna =  In(Vt,(Ecc-Ecb)/e,nb,nc,ptri->edge_len[0]);
-  AutoDScalar Jpa =  Ip(Vt,(Evc-Evb)/e,pb,pc,ptri->edge_len[0]);
-  AutoDScalar Jnb =  In(Vt,(Eca-Ecc)/e,nc,na,ptri->edge_len[1]);
-  AutoDScalar Jpb =  Ip(Vt,(Eva-Evc)/e,pc,pa,ptri->edge_len[1]);
-  PetscScalar Jn_scale = adtl::fmax(adtl::fmax(fabs(Jna.getValue()),fabs(Jnb.getValue())),
-                                    adtl::fmax(fabs(Jnc.getValue()),nia*nia));
-  PetscScalar Jp_scale = adtl::fmax(adtl::fmax(fabs(Jpa.getValue()),fabs(Jpb.getValue())),
-                                    adtl::fmax(fabs(Jpc.getValue()),nia*nia));
-  Jnc /=  Jn_scale;
-  Jpc /=  Jp_scale;
-  Jna /=  Jn_scale;
-  Jpa /=  Jp_scale;
-  Jnb /=  Jn_scale;
-  Jpb /=  Jp_scale;
+    if(pEdge==0) {
+      Jnc =  In(Vt,(EcA-EcB)/e,nA,nB,Lc);
+      Jpc =  Ip(Vt,(EvA-EvB)/e,pA,pB,Lc);
+      Jna =  In(Vt,(EcB-EcC)/e,nB,nC,La);
+      Jpa =  Ip(Vt,(EvB-EvC)/e,pC,La);
+      Jnb =  In(Vt,(EcC-EcA)/e,nC,nA,Lb);
+      Jpb =  Ip(Vt,(EvC-EvA)/e,pC,pA,Lb);
+      Jn_scale = adtl:fmax(adtl:fmax(fabs(Jna.getValue()),fabs(Jnb.getValue())),
+                           adtl::fmax(fabs(Jnc.getValue()),niA*niA));
+      Jp_scale = adtl:fmax(adtl:fmax(fabs(Jpa.getValue()),fabs(Jpb.getValue())),
+                           adtl::fmax(fabs(Jpc.getValue()),niA*niA));
+      Jnc /=  Jn_scale;
+      Jpc /=  Jp_scale;
+      Jna /=  Jn_scale;
+      Jpa /=  Jp_scale;
+      Jnb /=  Jn_scale;
+      Jpb /=  Jp_scale;
+    } else {
+      rotate3ADScalar(Jna,Jnb,Jnc);
+      rotate3ADScalar(Jpa,Jpb,Jpc);
+    }
 #endif
 
-  //---------------------------------------------------------------------------
-  //flux along A-B
-  //---------------------------------------------------------------------------
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
+    //flux along A-B
+    AutoDScalar Epnc, Etnc, Eppc, Etpc;
+    AutoDScalar Jnc_norm, Jpc_norm;
+    AutoDScalar mun, mup;
+    if(HighFieldMobility)
     {
-      AutoDScalar Jncx = ((Wca+Wcb)*Scx - Wca*Mb*Sax - Wcb*Ma*Sbx)*Jnc
-                       + (Wca*Sax - Wca*Mb*Scx)*Jna
-                       + (Wcb*Sbx - Wcb*Ma*Scx)*Jnb;
-      AutoDScalar Jncy = ((Wca+Wcb)*Scy - Wca*Mb*Say - Wcb*Ma*Sby)*Jnc
-                       + (Wca*Say - Wca*Mb*Scy)*Jna
-                       + (Wcb*Sby - Wcb*Ma*Scy)*Jnb;
-      AutoDScalar Jpcx = ((Wca+Wcb)*Scx - Wca*Mb*Sax - Wcb*Ma*Sbx)*Jpc
-                       + (Wca*Sax - Wca*Mb*Scx)*Jpa
-                       + (Wcb*Sbx - Wcb*Ma*Scx)*Jpb;
-      AutoDScalar Jpcy = ((Wca+Wcb)*Scy - Wca*Mb*Say - Wcb*Ma*Sby)*Jpc
-                       + (Wca*Say - Wca*Mb*Scy)*Jpa
-                       + (Wcb*Sby - Wcb*Ma*Scy)*Jpb;
-      Jnc_norm = sqrt(Jncx*Jncx + Jncy*Jncy + 1e-100);
-      Jpc_norm = sqrt(Jpcx*Jpcx + Jpcy*Jpcy + 1e-100);
-      Epnc = Ex*(Jncx/Jnc_norm) + Ey*(Jncy/Jnc_norm);
-      Etnc = Ex*(Jncy/Jnc_norm) - Ey*(Jncx/Jnc_norm);
-      Eppc = Ex*(Jpcx/Jpc_norm) + Ey*(Jpcy/Jpc_norm);
-      Etpc = Ex*(Jpcy/Jpc_norm) - Ey*(Jpcx/Jpc_norm);
-    }
-    else
-    {
-      Epnc = fabs(Eca-Ecb)/e/ptri->edge_len[2]; //parallel electrical field for electron
-      Eppc = fabs(Eva-Evb)/e/ptri->edge_len[2]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etnc = fabs(Eca + ptri->edge_len[1]*cos(ptri->angle[0])*(Ecb-Eca)/ptri->edge_len[2] - Ecc)
-           /(ptri->edge_len[1]*sin(ptri->angle[0]))/e;
-      Etpc = fabs(Eva + ptri->edge_len[1]*cos(ptri->angle[0])*(Evb-Eva)/ptri->edge_len[2] - Evc)
-           /(ptri->edge_len[1]*sin(ptri->angle[0]))/e;
-    }
-    mt->mapping(&pzone->danode[A],&aux[A],0);
-    AutoDScalar munCA =  mt->mob->ElecMob(pa,na,TD,adtl::fmax(0,Epnc),fabs(Etnc),TD);
-    AutoDScalar mupCA =  mt->mob->HoleMob(pa,na,TD,adtl::fmax(0,Eppc),fabs(Etpc),TD);
+      if(EJModel || IIType==EdotJ)
+      {
 
-    mt->mapping(&pzone->danode[B],&aux[B],0);
-    AutoDScalar munCB =  mt->mob->ElecMob(pb,nb,TD,adtl::fmax(0,Epnc),fabs(Etnc),TD);
-    AutoDScalar mupCB =  mt->mob->HoleMob(pb,nb,TD,adtl::fmax(0,Eppc),fabs(Etpc),TD);
-  
-    mun = 0.5*(munCA+munCB);
-    mup = 0.5*(mupCA+mupCB);
-  }
-  else
-  {
-    mun = 0.5*(aux[A].mun+aux[B].mun);
-    mup = 0.5*(aux[A].mup+aux[B].mup);
-  }
-#ifdef _IIC_
-  if(ImpactIonization)
-  {
-    if(IIType==EdotJ)
+        AutoDScalar JncxTca  = (Jnc*Say - Jna*Scy)/sinB;
+        AutoDScalar JncxTbc  = (Jnb*Scy - Jnc*Sby)/sinA;
+        AutoDScalar Jncx = (da * JncxTca + db * JncxTbc)/(da+db);
+
+        AutoDScalar JncyTca  = (-Jnc*Sax + Jna*Scx)/sinB;
+        AutoDScalar JncyTbc  = (-Jnb*Scx + Jnc*Sbx)/sinA;
+        AutoDScalar Jncy = (da * JncyTca + db * JncyTbc)/(da+db);
+
+        AutoDScalar JpcxTca  = (Jpc*Say - Jpa*Scy)/sinB;
+        AutoDScalar JpcxTbc  = (Jpb*Scy - Jpc*Sby)/sinA;
+        AutoDScalar Jpcx = (da * JpcxTca + db * JpcxTbc)/(da+db);
+
+        AutoDScalar JpcyTca  = (-Jpc*Sax + Jpa*Scx)/sinB;
+        AutoDScalar JpcyTbc  = (-Jpb*Scx + Jpc*Sbx)/sinA;
+        AutoDScalar Jpcy = (da * JpcyTca + db * JpcyTbc)/(da+db);
+
+        Jnc_norm = sqrt(Jncx*Jncx + Jncy*Jncy + 1e-100);
+        Jpc_norm = sqrt(Jpcx*Jpcx + Jpcy*Jpcy + 1e-100);
+        Epnc = (Ex*Jncx + Ey*Jncy)/Jnc_norm;
+        Etnc = (Ex*Jncy - Ey*Jncx)/Jnc_norm;
+        Eppc = (Ex*Jpcx + Ey*Jpcy)/Jpc_norm;
+        Etpc = (Ex*Jpcy - Ey*Jpcx)/Jpc_norm;
+      }
+      else
+      {
+        Epnc = fabs(EcA-EcB)/e/Lc; //parallel electrical field for electron
+        Eppc = fabs(EvA-EvB)/e/Lc; //parallel electrical field for hole
+        //transvers electrical field for electron and hole
+        Etnc = fabs(EcA + Lb*cosA*(EcB-EcA)/Lc - EcC)/(Lb*sinA)/e;
+        Etpc = fabs(EvA + Lb*cosA*(EvB-EvA)/Lc - EvC)/(Lb*sinA)/e;
+      }
+
+      mt->mapping(&pzone->danode[A],&aux[A],0);
+      AutoDScalar munCA =  mt->mob->ElecMob(pA,nA,TD,adtl::fmax(0,Epnc),fabs(Etnc),TD);
+      AutoDScalar mupCA =  mt->mob->HoleMob(pA,nA,TD,adtl::fmax(0,Eppc),fabs(Etpc),TD);
+
+      mt->mapping(&pzone->danode[B],&aux[B],0);
+      AutoDScalar munCB =  mt->mob->ElecMob(pB,nB,TD,adtl::fmax(0,Epnc),fabs(Etnc),TD);
+      AutoDScalar mupCB =  mt->mob->HoleMob(pB,nB,TD,adtl::fmax(0,Eppc),fabs(Etpc),TD);
+
+      mun = 0.5*(munCA+munCB);
+      mup = 0.5*(mupCA+mupCB);
+    } else {
+      mun = 0.5*(aux[A].mun+aux[B].mun);
+      mup = 0.5*(aux[A].mup+aux[B].mup);
+    }
+
+    AutoDScalar G=0;
+#ifdef _II_
+    if(ImpactIonization && IIType==EdotJ)
     {
       IIn =  mt->gen->ElecGenRate(TD,adtl::fmax(0,Epnc),Eg);
       IIp =  mt->gen->HoleGenRate(TD,adtl::fmax(0,Eppc),Eg);
       G   =  IIn*mun*Jnc_norm*Jn_scale + IIp*mup*Jpc_norm*Jp_scale;
     }
-    if(IIType==GradQf || IIType==EVector )
+    if( ImpactIonization && (IIType==GradQf || IIType==EVector) )
     {
-      G = IIn*mun*fabs(phina-phinb)/ptri->edge_len[2]*nmid(Vt,Va,Vb,na,nb)
-         +IIp*mup*fabs(phipa-phipb)/ptri->edge_len[2]*pmid(Vt,Va,Vb,pa,pb);
+      G = IIn*mun*fabs(phinA-phinB)/Lc*nmid(Vt,VA,VB,nA,nB)
+        +IIp*mup*fabs(phipA-phipB)/Lc*pmid(Vt,VA,VB,pA,pB);
     }
-    if( IIType==ESide )
+    if( ImpactIonization && IIType==ESide )
     {
-      IIn =  mt->gen->ElecGenRate(TD,fabs(Va-Vb)/ptri->edge_len[2],Eg);
-      IIp =  mt->gen->HoleGenRate(TD,fabs(Va-Vb)/ptri->edge_len[2],Eg);
+      IIn =  mt->gen->ElecGenRate(TD,fabs(VA-VB)/Lc,Eg);
+      IIp =  mt->gen->HoleGenRate(TD,fabs(VA-VB)/Lc,Eg);
       G = IIn*mun*fabs(Jnc)*Jn_scale + IIp*mup*fabs(Jpc)*Jp_scale;
     }
-    
-    J1.m[0] =  0;
-    J1.m[1] =  0;
-    J1.m[2] =  0;
-    J1.m[3] =  G.getADValue(0)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J1.m[4] =  G.getADValue(1)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J1.m[5] =  G.getADValue(2)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J1.m[6] =  G.getADValue(0)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J1.m[7] =  G.getADValue(1)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J1.m[8] =  G.getADValue(2)*0.25*ptri->d[2]*ptri->edge_len[2];
+    if (ImpactIonization)
+    {
+      PetscScalar S = 0.25*Lc*dc;
+      J1.m[0] =  0; J1.m[1] =  0; J1.m[2] =  0;
+      J1.m[3] =  G.getADValue(offset1)*S; J1.m[4] =  G.getADValue(offset1+1)*S; J1.m[5] =  G.getADValue(offset1+2)*S;
+      J1.m[6] =  G.getADValue(offset1)*S; J1.m[7] =  G.getADValue(offset1+1)*S; J1.m[8] =  G.getADValue(offset1+2)*S;
 
-    J2.m[0] =  0;
-    J2.m[1] =  0;
-    J2.m[2] =  0;
-    J2.m[3] =  G.getADValue(3)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J2.m[4] =  G.getADValue(4)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J2.m[5] =  G.getADValue(5)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J2.m[6] =  G.getADValue(3)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J2.m[7] =  G.getADValue(4)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J2.m[8] =  G.getADValue(5)*0.25*ptri->d[2]*ptri->edge_len[2];
+      J2.m[0] =  0; J2.m[1] =  0; J2.m[2] =  0;
+      J2.m[3] =  G.getADValue(offset2)*S; J2.m[4] =  G.getADValue(offset2+1)*S; J2.m[5] =  G.getADValue(offset2+2)*S;
+      J2.m[6] =  G.getADValue(offset2)*S; J2.m[7] =  G.getADValue(offset2+1)*S; J2.m[8] =  G.getADValue(offset2+2)*S;
 
-    J3.m[0] =  0;
-    J3.m[1] =  0;
-    J3.m[2] =  0;
-    J3.m[3] =  G.getADValue(6)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J3.m[4] =  G.getADValue(7)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J3.m[5] =  G.getADValue(8)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J3.m[6] =  G.getADValue(6)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J3.m[7] =  G.getADValue(7)*0.25*ptri->d[2]*ptri->edge_len[2];
-    J3.m[8] =  G.getADValue(8)*0.25*ptri->d[2]*ptri->edge_len[2];
+      J3.m[0] =  0; J3.m[1] =  0; J3.m[2] =  0;
+      J3.m[3] =  G.getADValue(offset3)*S; J3.m[4] =  G.getADValue(offset3+1)*S; J3.m[5] =  G.getADValue(offset3+2)*S;
+      J3.m[6] =  G.getADValue(offset3)*S; J3.m[7] =  G.getADValue(offset3+1)*S; J3.m[8] =  G.getADValue(offset3+2)*S;
+
+      MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index1,3,index2,J2.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index1,3,index3,J3.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index2,3,index1,J1.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index2,3,index2,J2.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index2,3,index3,J3.m,ADD_VALUES);
+    }
+#endif
+    //---------------------------------------------------------------------------
+    AutoDScalar FA0 =   0.5*(aux[A].eps+aux[B].eps)*(VB-VA)/Lc*dc;
+    AutoDScalar FA1 =   mun*Jnc*Jn_scale*dc;
+    AutoDScalar FA2 = - mup*Jpc*Jp_scale*dc;
+
+    J1.m[0] =  FA0.getADValue(offset1);  J1.m[1] =  FA0.getADValue(offset1+1);  J1.m[2] =  FA0.getADValue(offset1+2);
+    J1.m[3] =  FA1.getADValue(offset1);  J1.m[4] =  FA1.getADValue(offset1+1);  J1.m[5] =  FA1.getADValue(offset1+2);
+    J1.m[6] =  FA2.getADValue(offset1);  J1.m[7] =  FA2.getADValue(offset1+1);  J1.m[8] =  FA2.getADValue(offset1+2);
+
+
+    J2.m[0] =  FA0.getADValue(offset2);  J2.m[1] =  FA0.getADValue(offset2+1);  J2.m[2] =  FA0.getADValue(offset2+2);
+    J2.m[3] =  FA1.getADValue(offset2);  J2.m[4] =  FA1.getADValue(offset2+1);  J2.m[5] =  FA1.getADValue(offset2+2);
+    J2.m[6] =  FA2.getADValue(offset2);  J2.m[7] =  FA2.getADValue(offset2+1);  J2.m[8] =  FA2.getADValue(offset2+2);
+
+
+    J3.m[0] =  FA0.getADValue(offset3);  J3.m[1] =  FA0.getADValue(offset3+1);  J3.m[2] =  FA0.getADValue(offset3+2);
+    J3.m[3] =  FA1.getADValue(offset3);  J3.m[4] =  FA1.getADValue(offset3+1);  J3.m[5] =  FA1.getADValue(offset3+2);
+    J3.m[6] =  FA2.getADValue(offset3);  J3.m[7] =  FA2.getADValue(offset3+1);  J3.m[8] =  FA2.getADValue(offset3+2);
 
     MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
     MatSetValues(*jtmp,3,index1,3,index2,J2.m,ADD_VALUES);
     MatSetValues(*jtmp,3,index1,3,index3,J3.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index2,3,index1,J1.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index2,3,index2,J2.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index2,3,index3,J3.m,ADD_VALUES);
+    MatSetValues(*jtmp,3,index2,3,index1,(-J1).m,ADD_VALUES);
+    MatSetValues(*jtmp,3,index2,3,index2,(-J2).m,ADD_VALUES);
+    MatSetValues(*jtmp,3,index2,3,index3,(-J3).m,ADD_VALUES);
+
+
+ //Generation at A
+ #ifdef _HURKX_BTBT_
+    if (BandBandTunneling)
+    {
+      PetscScalar S = 0.25*dc*Lc + 0.25*db*Lb;
+
+      AutoDScalar GradQfnx = -((yB-yC)*phinA + (yC-yA)*phinB +(yA-yB)*phinC)/(2*tri_area);
+      AutoDScalar GradQfny = -((xC-xB)*phinA + (xA-xC)*phinB +(xB-xA)*phinC)/(2*tri_area);
+      AutoDScalar GradQfn = sqrt(GradQfnx*GradQfnx+GradQfny*GradQfny+1e-20);
+
+      AutoDScalar GradQfpx = -((yB-yC)*phipA + (yC-yA)*phipB +(yA-yB)*phipC)/(2*tri_area);
+      AutoDScalar GradQfpy = -((xC-xB)*phipA + (xA-xC)*phipB +(xB-xA)*phipC)/(2*tri_area);
+      AutoDScalar GradQfp = sqrt(GradQfpx*GradQfpx+GradQfpy*GradQfpy+1e-20);
+
+      AutoDScalar nn = nA * pow(niA / mt->band->Nc(fs[A].T), GradQfn/E );
+      AutoDScalar pp = pA * pow(niA / mt->band->Nv(fs[A].T), GradQfp/E );
+
+      AutoDScalar D = (niA*niA - nn*pp)/(niA+nn)/(niA+pp);
+      AutoDScalar D1 = (GradQfnx*GradQfpx + GradQfny*GradQfpy)/GradQfn/GradQfp;
+      AutoDScalar G_BB = D*mt->band->BB_Tunneling(T,E);
+
+      J1.m[0] =  0; J1.m[1] =  0; J1.m[2] =  0;
+      J1.m[3] =  G_BB.getADValue(offset1)*S; J1.m[4] =  G_BB.getADValue(offset1+1)*S; J1.m[5] =  G_BB.getADValue(offset1+2)*S;
+      J1.m[6] =  G_BB.getADValue(offset1)*S; J1.m[7] =  G_BB.getADValue(offset1+1)*S; J1.m[8] =  G_BB.getADValue(offset1+2)*S;
+
+      J2.m[0] =  0; J2.m[1] =  0; J2.m[2] =  0;
+      J2.m[3] =  G_BB.getADValue(offset2)*S; J2.m[4] =  G_BB.getADValue(offset2+1)*S; J2.m[5] =  G_BB.getADValue(offset2+2)*S;
+      J2.m[6] =  G_BB.getADValue(offset2)*S; J2.m[7] =  G_BB.getADValue(offset2+1)*S; J2.m[8] =  G_BB.getADValue(offset2+2)*S;
+
+      J3.m[0] =  0; J3.m[1] =  0; J3.m[2] =  0;
+      J3.m[3] =  G_BB.getADValue(offset3)*S; J3.m[4] =  G_BB.getADValue(offset3+1)*S; J3.m[5] =  G_BB.getADValue(offset3+2)*S;
+      J3.m[6] =  G_BB.getADValue(offset3)*S; J3.m[7] =  G_BB.getADValue(offset3+1)*S; J3.m[8] =  G_BB.getADValue(offset3+2)*S;
+
+      MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index1,3,index2,J2.m,ADD_VALUES);
+      MatSetValues(*jtmp,3,index1,3,index3,J3.m,ADD_VALUES);
+    }
+#endif
+
+    if(pEdge==0) {
+#ifndef _HURKX_BTBT_
+      if(BandBandTunneling)
+      {
+        AutoDScalar G_BB = mt->band->BB_Tunneling(T,E);
+
+        MatSetValue(*jtmp,index1[1],index1[0],G_BB.getADValue(0)*ptri->s[0],ADD_VALUES);
+        MatSetValue(*jtmp,index1[1],index2[0],G_BB.getADValue(3)*ptri->s[0],ADD_VALUES);
+        MatSetValue(*jtmp,index1[1],index3[0],G_BB.getADValue(6)*ptri->s[0],ADD_VALUES);
+        MatSetValue(*jtmp,index1[2],index1[0],G_BB.getADValue(0)*ptri->s[0],ADD_VALUES);
+        MatSetValue(*jtmp,index1[2],index2[0],G_BB.getADValue(3)*ptri->s[0],ADD_VALUES);
+        MatSetValue(*jtmp,index1[2],index3[0],G_BB.getADValue(6)*ptri->s[0],ADD_VALUES);
+
+        MatSetValue(*jtmp,index2[1],index1[0],G_BB.getADValue(0)*ptri->s[1],ADD_VALUES);
+        MatSetValue(*jtmp,index2[1],index2[0],G_BB.getADValue(3)*ptri->s[1],ADD_VALUES);
+        MatSetValue(*jtmp,index2[1],index3[0],G_BB.getADValue(6)*ptri->s[1],ADD_VALUES);
+        MatSetValue(*jtmp,index2[2],index1[0],G_BB.getADValue(0)*ptri->s[1],ADD_VALUES);
+        MatSetValue(*jtmp,index2[2],index2[0],G_BB.getADValue(3)*ptri->s[1],ADD_VALUES);
+        MatSetValue(*jtmp,index2[2],index3[0],G_BB.getADValue(6)*ptri->s[1],ADD_VALUES);
+
+        MatSetValue(*jtmp,index3[1],index1[0],G_BB.getADValue(0)*ptri->s[2],ADD_VALUES);
+        MatSetValue(*jtmp,index3[1],index2[0],G_BB.getADValue(3)*ptri->s[2],ADD_VALUES);
+        MatSetValue(*jtmp,index3[1],index3[0],G_BB.getADValue(6)*ptri->s[2],ADD_VALUES);
+        MatSetValue(*jtmp,index3[2],index1[0],G_BB.getADValue(0)*ptri->s[2],ADD_VALUES);
+        MatSetValue(*jtmp,index3[2],index2[0],G_BB.getADValue(3)*ptri->s[2],ADD_VALUES);
+        MatSetValue(*jtmp,index3[2],index3[0],G_BB.getADValue(6)*ptri->s[2],ADD_VALUES);
+      }  
+#endif
+      //---------------------------------------------------------------------------
+      Set_Mat3_zero(J1);
+      PetscScalar S;
+      S = 0.25*ptri->d[2]*ptri->edge_len[2] + 0.25*ptri->d[1]*ptri->edge_len[1];
+      J1.m[4] =  - RA.getADValue(1)*S;   
+      J1.m[5] =  - RA.getADValue(2)*S;   
+      J1.m[7] =  - RA.getADValue(1)*S;  
+      J1.m[8] =  - RA.getADValue(2)*S;  
+      MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
+
+      //---------------------------------------------------------------------------
+      Set_Mat3_zero(J2);
+      S = 0.25*ptri->d[0]*ptri->edge_len[0] + 0.25*ptri->d[2]*ptri->edge_len[2];
+      J2.m[4] =  - RB.getADValue(4)*S;   
+      J2.m[5] =  - RB.getADValue(5)*S;   
+      J2.m[7] =  - RB.getADValue(4)*S;  
+      J2.m[8] =  - RB.getADValue(5)*S;  
+      MatSetValues(*jtmp,3,index2,3,index2,J2.m,ADD_VALUES);
+
+      //---------------------------------------------------------------------------
+      Set_Mat3_zero(J3); 
+      S = 0.25*ptri->d[1]*ptri->edge_len[1] + 0.25*ptri->d[0]*ptri->edge_len[0];
+      J3.m[4] =  - RC.getADValue(7)*S;   
+      J3.m[5] =  - RC.getADValue(8)*S;   
+      J3.m[7] =  - RC.getADValue(7)*S;  
+      J3.m[8] =  - RC.getADValue(8)*S;  
+      MatSetValues(*jtmp,3,index3,3,index3,J3.m,ADD_VALUES);
+    }
+
   }
-#endif  
-  //---------------------------------------------------------------------------
-  AutoDScalar FA0 =   0.5*(aux[A].eps+aux[B].eps)*(Vb-Va)/ptri->edge_len[2]*ptri->d[2];
-  AutoDScalar FA1 =   mun*Jnc*Jn_scale*ptri->d[2];
-  AutoDScalar FA2 = - mup*Jpc*Jp_scale*ptri->d[2];
-
-  J1.m[0] =  FA0.getADValue(0);  J1.m[1] =  FA0.getADValue(1);  J1.m[2] =  FA0.getADValue(2);
-  J1.m[3] =  FA1.getADValue(0);  J1.m[4] =  FA1.getADValue(1);  J1.m[5] =  FA1.getADValue(2);
-  J1.m[6] =  FA2.getADValue(0);  J1.m[7] =  FA2.getADValue(1);  J1.m[8] =  FA2.getADValue(2);
-            
-  
-  J2.m[0] =  FA0.getADValue(3);  J2.m[1] =  FA0.getADValue(4);  J2.m[2] =  FA0.getADValue(5);
-  J2.m[3] =  FA1.getADValue(3);  J2.m[4] =  FA1.getADValue(4);  J2.m[5] =  FA1.getADValue(5);
-  J2.m[6] =  FA2.getADValue(3);  J2.m[7] =  FA2.getADValue(4);  J2.m[8] =  FA2.getADValue(5);
-
-  
-  J3.m[0] =  FA0.getADValue(6);  J3.m[1] =  FA0.getADValue(7);  J3.m[2] =  FA0.getADValue(8);
-  J3.m[3] =  FA1.getADValue(6);  J3.m[4] =  FA1.getADValue(7);  J3.m[5] =  FA1.getADValue(8);
-  J3.m[6] =  FA2.getADValue(6);  J3.m[7] =  FA2.getADValue(7);  J3.m[8] =  FA2.getADValue(8);
-  
-  MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index1,3,index2,J2.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index1,3,index3,J3.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index2,3,index1,(-J1).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index2,3,index2,(-J2).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index2,3,index3,(-J3).m,ADD_VALUES);
-
-
-  //---------------------------------------------------------------------------
-  //flux along B-C
-  //---------------------------------------------------------------------------
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
-    {
-      AutoDScalar Jnax = ((Wab+Wac)*Sax - Wab*Mc*Sbx - Wac*Mb*Scx)*Jna
-                       + (Wab*Sbx - Wab*Mc*Sax)*Jnb
-                       + (Wac*Scx - Wac*Mb*Sax)*Jnc;
-      AutoDScalar Jnay = ((Wab+Wac)*Say - Wab*Mc*Sby - Wac*Mb*Scy)*Jna
-                       + (Wab*Sby - Wab*Mc*Say)*Jnb
-                       + (Wac*Scy - Wac*Mb*Say)*Jnc;
-      AutoDScalar Jpax = ((Wab+Wac)*Sax - Wab*Mc*Sbx - Wac*Mb*Scx)*Jpa
-                       + (Wab*Sbx - Wab*Mc*Sax)*Jpb
-                       + (Wac*Scx - Wac*Mb*Sax)*Jpc;
-      AutoDScalar Jpay = ((Wab+Wac)*Say - Wab*Mc*Sby - Wac*Mb*Scy)*Jpa
-                       + (Wab*Sby - Wab*Mc*Say)*Jpb
-                       + (Wac*Scy - Wac*Mb*Say)*Jpc;
-      Jna_norm = sqrt(Jnax*Jnax + Jnay*Jnay + 1e-100);
-      Jpa_norm = sqrt(Jpax*Jpax + Jpay*Jpay + 1e-100);
-      Epna = Ex*(Jnax/Jna_norm) + Ey*(Jnay/Jna_norm);
-      Etna = Ex*(Jnay/Jna_norm) - Ey*(Jnax/Jna_norm);
-      Eppa = Ex*(Jpax/Jpa_norm) + Ey*(Jpay/Jpa_norm);
-      Etpa = Ex*(Jpay/Jpa_norm) - Ey*(Jpax/Jpa_norm);
-    }
-    else
-    {
-      Epna = fabs(Ecb-Ecc)/e/ptri->edge_len[0]; //parallel electrical field for electron
-      Eppa = fabs(Evb-Evc)/e/ptri->edge_len[0]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etna = fabs(Ecb + ptri->edge_len[2]*cos(ptri->angle[1])*(Ecc-Ecb)/ptri->edge_len[0] - Eca)
-           /(ptri->edge_len[2]*sin(ptri->angle[1]))/e;
-      Etpa = fabs(Evb + ptri->edge_len[2]*cos(ptri->angle[1])*(Evc-Evb)/ptri->edge_len[0] - Eva)
-           /(ptri->edge_len[2]*sin(ptri->angle[1]))/e;
-    }
-    mt->mapping(&pzone->danode[B],&aux[B],0);
-    AutoDScalar munAB =  mt->mob->ElecMob(pb,nb,TD,adtl::fmax(0,Epna),fabs(Etna),TD);
-    AutoDScalar mupAB =  mt->mob->HoleMob(pb,nb,TD,adtl::fmax(0,Eppa),fabs(Etpa),TD);
-
-    mt->mapping(&pzone->danode[C],&aux[C],0);
-    AutoDScalar munAC =  mt->mob->ElecMob(pc,nc,TD,adtl::fmax(0,Epna),fabs(Etna),TD);
-    AutoDScalar mupAC =  mt->mob->HoleMob(pc,nc,TD,adtl::fmax(0,Eppa),fabs(Etpa),TD);
-  
-    mun = 0.5*(munAB+munAC);
-    mup = 0.5*(mupAB+mupAC);
-  }
-  else 
-  {  
-    mun = 0.5*(aux[B].mun+aux[C].mun);
-    mup = 0.5*(aux[B].mup+aux[C].mup);
-  }
-#ifdef _IIA_
-  if(ImpactIonization)
-  {
-    if(IIType==EdotJ)
-    {
-      IIn =  mt->gen->ElecGenRate(TD,adtl::fmax(0,Epna),Eg);
-      IIp =  mt->gen->HoleGenRate(TD,adtl::fmax(0,Eppa),Eg);
-      G   =  IIn*mun*Jna_norm*Jn_scale + IIp*mup*Jpa_norm*Jp_scale;
-    }
-    if(IIType==GradQf || IIType==EVector )
-    {
-      G = IIn*mun*fabs(phinb-phinc)/ptri->edge_len[0]*nmid(Vt,Vb,Vc,nb,nc)
-         +IIp*mup*fabs(phipb-phipc)/ptri->edge_len[0]*pmid(Vt,Vb,Vc,pb,pc);
-    }
-    if(IIType==ESide )
-    {
-      IIn =  mt->gen->ElecGenRate(TD,fabs(Vb-Vc)/ptri->edge_len[0],Eg);
-      IIp =  mt->gen->HoleGenRate(TD,fabs(Vb-Vc)/ptri->edge_len[0],Eg);
-      G = IIn*mun*fabs(Jna)*Jn_scale + IIp*mup*fabs(Jpa)*Jp_scale;
-    }
-    J2.m[0] =  0;
-    J2.m[1] =  0;
-    J2.m[2] =  0;
-    J2.m[3] =  G.getADValue(3)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J2.m[4] =  G.getADValue(4)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J2.m[5] =  G.getADValue(5)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J2.m[6] =  G.getADValue(3)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J2.m[7] =  G.getADValue(4)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J2.m[8] =  G.getADValue(5)*0.25*ptri->d[0]*ptri->edge_len[0];
-
-    J3.m[0] =  0;
-    J3.m[1] =  0;
-    J3.m[2] =  0;
-    J3.m[3] =  G.getADValue(6)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J3.m[4] =  G.getADValue(7)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J3.m[5] =  G.getADValue(8)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J3.m[6] =  G.getADValue(6)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J3.m[7] =  G.getADValue(7)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J3.m[8] =  G.getADValue(8)*0.25*ptri->d[0]*ptri->edge_len[0];
-
-    J1.m[0] =  0;
-    J1.m[1] =  0;
-    J1.m[2] =  0;
-    J1.m[3] =  G.getADValue(0)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J1.m[4] =  G.getADValue(1)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J1.m[5] =  G.getADValue(2)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J1.m[6] =  G.getADValue(0)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J1.m[7] =  G.getADValue(1)*0.25*ptri->d[0]*ptri->edge_len[0];
-    J1.m[8] =  G.getADValue(2)*0.25*ptri->d[0]*ptri->edge_len[0];
-
-    MatSetValues(*jtmp,3,index2,3,index2,J2.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index2,3,index3,J3.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index2,3,index1,J1.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index3,3,index2,J2.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index3,3,index3,J3.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index3,3,index1,J1.m,ADD_VALUES);
-  }
-#endif 
-  //---------------------------------------------------------------------------
-  AutoDScalar FB0 =   0.5*(aux[B].eps+aux[C].eps)*(Vc-Vb)/ptri->edge_len[0]*ptri->d[0];
-  AutoDScalar FB1 =   mun*Jna*Jn_scale*ptri->d[0];
-  AutoDScalar FB2 = - mup*Jpa*Jp_scale*ptri->d[0];
-  
-  J1.m[0] =  FB0.getADValue(3);  J1.m[1] =  FB0.getADValue(4);  J1.m[2] =  FB0.getADValue(5);
-  J1.m[3] =  FB1.getADValue(3);  J1.m[4] =  FB1.getADValue(4);  J1.m[5] =  FB1.getADValue(5);
-  J1.m[6] =  FB2.getADValue(3);  J1.m[7] =  FB2.getADValue(4);  J1.m[8] =  FB2.getADValue(5);
-            
-            
-  J2.m[0] =  FB0.getADValue(6);  J2.m[1] =  FB0.getADValue(7);  J2.m[2] =  FB0.getADValue(8);
-  J2.m[3] =  FB1.getADValue(6);  J2.m[4] =  FB1.getADValue(7);  J2.m[5] =  FB1.getADValue(8);
-  J2.m[6] =  FB2.getADValue(6);  J2.m[7] =  FB2.getADValue(7);  J2.m[8] =  FB2.getADValue(8);
-
-  
-  J3.m[0] =  FB0.getADValue(0);  J3.m[1] =  FB0.getADValue(1);  J3.m[2] =  FB0.getADValue(2);
-  J3.m[3] =  FB1.getADValue(0);  J3.m[4] =  FB1.getADValue(1);  J3.m[5] =  FB1.getADValue(2);
-  J3.m[6] =  FB2.getADValue(0);  J3.m[7] =  FB2.getADValue(1);  J3.m[8] =  FB2.getADValue(2);
-   
-  MatSetValues(*jtmp,3,index2,3,index2,J1.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index2,3,index3,J2.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index2,3,index1,J3.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index3,3,index2,(-J1).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index3,3,index3,(-J2).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index3,3,index1,(-J3).m,ADD_VALUES);
-
-
-  //---------------------------------------------------------------------------
-  //flux along C-A
-  //---------------------------------------------------------------------------
-  if(HighFieldMobility)
-  {
-    if(EJModel || IIType==EdotJ)
-    {
-      AutoDScalar Jnbx = ((Wbc+Wba)*Sbx - Wbc*Ma*Scx - Wba*Mc*Sax)*Jnb
-                       + (Wbc*Scx - Wbc*Ma*Sbx)*Jnc
-                       + (Wba*Sax - Wba*Mc*Sbx)*Jna;
-      AutoDScalar Jnby = ((Wbc+Wba)*Sby - Wbc*Ma*Scy - Wba*Mc*Say)*Jnb
-                       + (Wbc*Scy - Wbc*Ma*Sby)*Jnc
-                       + (Wba*Say - Wba*Mc*Sby)*Jna;
-      AutoDScalar Jpbx = ((Wbc+Wba)*Sbx - Wbc*Ma*Scx - Wba*Mc*Sax)*Jpb
-                       + (Wbc*Scx - Wbc*Ma*Sbx)*Jpc
-                       + (Wba*Sax - Wba*Mc*Sbx)*Jpa;
-      AutoDScalar Jpby = ((Wbc+Wba)*Sby - Wbc*Ma*Scy - Wba*Mc*Say)*Jpb
-                       + (Wbc*Scy - Wbc*Ma*Sby)*Jpc
-                       + (Wba*Say - Wba*Mc*Sby)*Jpa;
-      Jnb_norm = sqrt(Jnbx*Jnbx + Jnby*Jnby + 1e-100);
-      Jpb_norm = sqrt(Jpbx*Jpbx + Jpby*Jpby + 1e-100);
-      Epnb = Ex*(Jnbx/Jnb_norm) + Ey*(Jnby/Jnb_norm);
-      Etnb = Ex*(Jnby/Jnb_norm) - Ey*(Jnbx/Jnb_norm);
-      Eppb = Ex*(Jpbx/Jpb_norm) + Ey*(Jpby/Jpb_norm);
-      Etpb = Ex*(Jpby/Jpb_norm) - Ey*(Jpbx/Jpb_norm);
-    }
-    else
-    {
-      Epnb = fabs(Ecc-Eca)/e/ptri->edge_len[1]; //parallel electrical field for electron
-      Eppb = fabs(Evc-Eva)/e/ptri->edge_len[1]; //parallel electrical field for hole
-      //transvers electrical field for electron and hole
-      Etnb = fabs(Ecc + ptri->edge_len[0]*cos(ptri->angle[2])*(Eca-Ecc)/ptri->edge_len[1] - Ecb)
-           /(ptri->edge_len[0]*sin(ptri->angle[2]))/e;
-      Etpb = fabs(Evc + ptri->edge_len[0]*cos(ptri->angle[2])*(Eva-Evc)/ptri->edge_len[1] - Evb)
-           /(ptri->edge_len[0]*sin(ptri->angle[2]))/e;
-    }
-    mt->mapping(&pzone->danode[C],&aux[C],0);
-    AutoDScalar munBC =  mt->mob->ElecMob(pc,nc,TD,adtl::fmax(0,Epnb),fabs(Etnb),TD);
-    AutoDScalar mupBC =  mt->mob->HoleMob(pc,nc,TD,adtl::fmax(0,Eppb),fabs(Etpb),TD);
-
-    mt->mapping(&pzone->danode[A],&aux[A],0);
-    AutoDScalar munBA =  mt->mob->ElecMob(pa,na,TD,adtl::fmax(0,Epnb),fabs(Etnb),TD);
-    AutoDScalar mupBA =  mt->mob->HoleMob(pa,na,TD,adtl::fmax(0,Eppb),fabs(Etpb),TD);
-  
-    mun = 0.5*(munBC+munBA);
-    mup = 0.5*(mupBC+mupBA);
-  }
-  else
-  {
-    mun = 0.5*(aux[C].mun+aux[A].mun);
-    mup = 0.5*(aux[C].mup+aux[A].mup);
-  }  
-#ifdef _IIB_
-  if(ImpactIonization)
-  {
-    if(IIType==EdotJ)
-    {
-      IIn =  mt->gen->ElecGenRate(TD,adtl::fmax(0,Epnb),Eg);
-      IIp =  mt->gen->HoleGenRate(TD,adtl::fmax(0,Eppb),Eg);
-      G   =  IIn*mun*Jnb_norm*Jn_scale + IIp*mup*Jpb_norm*Jp_scale;
-    }
-    if((IIType==GradQf || IIType==EVector) )
-    {
-
-      G = IIn*mun*fabs(phinc-phina)/ptri->edge_len[1]*nmid(Vt,Vc,Va,nc,na)
-         +IIp*mup*fabs(phipc-phipa)/ptri->edge_len[1]*pmid(Vt,Vc,Va,pc,pa);
-    }
-    if(IIType==ESide )
-    {
-      IIn =  mt->gen->ElecGenRate(TD,fabs(Vc-Va)/ptri->edge_len[1],Eg);
-      IIp =  mt->gen->HoleGenRate(TD,fabs(Vc-Va)/ptri->edge_len[1],Eg);
-      G = IIn*mun*fabs(Jnb)*Jn_scale + IIp*mup*fabs(Jpb)*Jp_scale;
-    }
-  
-    J3.m[0] =  0;
-    J3.m[1] =  0;
-    J3.m[2] =  0;
-    J3.m[3] =  G.getADValue(6)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J3.m[4] =  G.getADValue(7)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J3.m[5] =  G.getADValue(8)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J3.m[6] =  G.getADValue(6)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J3.m[7] =  G.getADValue(7)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J3.m[8] =  G.getADValue(8)*0.25*ptri->d[1]*ptri->edge_len[1];
-
-    J1.m[0] =  0;
-    J1.m[1] =  0;
-    J1.m[2] =  0;
-    J1.m[3] =  G.getADValue(0)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J1.m[4] =  G.getADValue(1)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J1.m[5] =  G.getADValue(2)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J1.m[6] =  G.getADValue(0)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J1.m[7] =  G.getADValue(1)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J1.m[8] =  G.getADValue(2)*0.25*ptri->d[1]*ptri->edge_len[1];
-
-    J2.m[0] =  0;
-    J2.m[1] =  0;
-    J2.m[2] =  0;
-    J2.m[3] =  G.getADValue(3)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J2.m[4] =  G.getADValue(4)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J2.m[5] =  G.getADValue(5)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J2.m[6] =  G.getADValue(3)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J2.m[7] =  G.getADValue(4)*0.25*ptri->d[1]*ptri->edge_len[1];
-    J2.m[8] =  G.getADValue(5)*0.25*ptri->d[1]*ptri->edge_len[1];
-
-    MatSetValues(*jtmp,3,index3,3,index3,J3.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index3,3,index1,J1.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index3,3,index2,J2.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index1,3,index3,J3.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
-    MatSetValues(*jtmp,3,index1,3,index2,J2.m,ADD_VALUES);
-  }
-#endif  
-  //---------------------------------------------------------------------------
-  AutoDScalar FC0 =   0.5*(aux[C].eps+aux[A].eps)*(Va-Vc)/ptri->edge_len[1]*ptri->d[1];
-  AutoDScalar FC1 =   mun*Jnb*Jn_scale*ptri->d[1];
-  AutoDScalar FC2 = - mup*Jpb*Jp_scale*ptri->d[1];
-  J1.m[0] =  FC0.getADValue(6);  J1.m[1] =  FC0.getADValue(7);  J1.m[2] =  FC0.getADValue(8);
-  J1.m[3] =  FC1.getADValue(6);  J1.m[4] =  FC1.getADValue(7);  J1.m[5] =  FC1.getADValue(8);
-  J1.m[6] =  FC2.getADValue(6);  J1.m[7] =  FC2.getADValue(7);  J1.m[8] =  FC2.getADValue(8);
-            
-            
-  J2.m[0] =  FC0.getADValue(0);  J2.m[1] =  FC0.getADValue(1);  J2.m[2] =  FC0.getADValue(2);
-  J2.m[3] =  FC1.getADValue(0);  J2.m[4] =  FC1.getADValue(1);  J2.m[5] =  FC1.getADValue(2);
-  J2.m[6] =  FC2.getADValue(0);  J2.m[7] =  FC2.getADValue(1);  J2.m[8] =  FC2.getADValue(2);
-
-  
-  J3.m[0] =  FC0.getADValue(3);  J3.m[1] =  FC0.getADValue(4);  J3.m[2] =  FC0.getADValue(5);
-  J3.m[3] =  FC1.getADValue(3);  J3.m[4] =  FC1.getADValue(4);  J3.m[5] =  FC1.getADValue(5);
-  J3.m[6] =  FC2.getADValue(3);  J3.m[7] =  FC2.getADValue(4);  J3.m[8] =  FC2.getADValue(5);
-   
-  MatSetValues(*jtmp,3,index3,3,index3,J1.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index3,3,index1,J2.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index3,3,index2,J3.m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index1,3,index3,(-J1).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index1,3,index1,(-J2).m,ADD_VALUES);
-  MatSetValues(*jtmp,3,index1,3,index2,(-J3).m,ADD_VALUES);
-
-
-  //---------------------------------------------------------------------------
-
-  if(BandBandTunneling)
-  {
-    AutoDScalar G_BB = mt->band->BB_Tunneling(T,E);
-
-    MatSetValue(*jtmp,index1[1],index1[0],G_BB.getADValue(0)*ptri->s[0],ADD_VALUES);
-    MatSetValue(*jtmp,index1[1],index2[0],G_BB.getADValue(3)*ptri->s[0],ADD_VALUES);
-    MatSetValue(*jtmp,index1[1],index3[0],G_BB.getADValue(6)*ptri->s[0],ADD_VALUES);
-    MatSetValue(*jtmp,index1[2],index1[0],G_BB.getADValue(0)*ptri->s[0],ADD_VALUES);
-    MatSetValue(*jtmp,index1[2],index2[0],G_BB.getADValue(3)*ptri->s[0],ADD_VALUES);
-    MatSetValue(*jtmp,index1[2],index3[0],G_BB.getADValue(6)*ptri->s[0],ADD_VALUES);
-
-    MatSetValue(*jtmp,index2[1],index1[0],G_BB.getADValue(0)*ptri->s[1],ADD_VALUES);
-    MatSetValue(*jtmp,index2[1],index2[0],G_BB.getADValue(3)*ptri->s[1],ADD_VALUES);
-    MatSetValue(*jtmp,index2[1],index3[0],G_BB.getADValue(6)*ptri->s[1],ADD_VALUES);
-    MatSetValue(*jtmp,index2[2],index1[0],G_BB.getADValue(0)*ptri->s[1],ADD_VALUES);
-    MatSetValue(*jtmp,index2[2],index2[0],G_BB.getADValue(3)*ptri->s[1],ADD_VALUES);
-    MatSetValue(*jtmp,index2[2],index3[0],G_BB.getADValue(6)*ptri->s[1],ADD_VALUES);
-
-    MatSetValue(*jtmp,index3[1],index1[0],G_BB.getADValue(0)*ptri->s[2],ADD_VALUES);
-    MatSetValue(*jtmp,index3[1],index2[0],G_BB.getADValue(3)*ptri->s[2],ADD_VALUES);
-    MatSetValue(*jtmp,index3[1],index3[0],G_BB.getADValue(6)*ptri->s[2],ADD_VALUES);
-    MatSetValue(*jtmp,index3[2],index1[0],G_BB.getADValue(0)*ptri->s[2],ADD_VALUES);
-    MatSetValue(*jtmp,index3[2],index2[0],G_BB.getADValue(3)*ptri->s[2],ADD_VALUES);
-    MatSetValue(*jtmp,index3[2],index3[0],G_BB.getADValue(6)*ptri->s[2],ADD_VALUES);
-  }  
-
-  //---------------------------------------------------------------------------
-  Set_Mat3_zero(J1);
-  S = 0.25*ptri->d[2]*ptri->edge_len[2] + 0.25*ptri->d[1]*ptri->edge_len[1];
-  J1.m[4] =  - Ra.getADValue(1)*S;   
-  J1.m[5] =  - Ra.getADValue(2)*S;   
-  J1.m[7] =  - Ra.getADValue(1)*S;  
-  J1.m[8] =  - Ra.getADValue(2)*S;  
-  MatSetValues(*jtmp,3,index1,3,index1,J1.m,ADD_VALUES);
-  
-  //---------------------------------------------------------------------------
-  Set_Mat3_zero(J2);
-  S = 0.25*ptri->d[0]*ptri->edge_len[0] + 0.25*ptri->d[2]*ptri->edge_len[2];
-  J2.m[4] =  - Rb.getADValue(4)*S;   
-  J2.m[5] =  - Rb.getADValue(5)*S;   
-  J2.m[7] =  - Rb.getADValue(4)*S;  
-  J2.m[8] =  - Rb.getADValue(5)*S;  
-  MatSetValues(*jtmp,3,index2,3,index2,J2.m,ADD_VALUES);
-  
-  //---------------------------------------------------------------------------
-  Set_Mat3_zero(J3); 
-  S = 0.25*ptri->d[1]*ptri->edge_len[1] + 0.25*ptri->d[0]*ptri->edge_len[0];
-  J3.m[4] =  - Rc.getADValue(7)*S;   
-  J3.m[5] =  - Rc.getADValue(8)*S;   
-  J3.m[7] =  - Rc.getADValue(7)*S;  
-  J3.m[8] =  - Rc.getADValue(8)*S;  
-  MatSetValues(*jtmp,3,index3,3,index3,J3.m,ADD_VALUES);
-  
 }
-
 
 //-----------------------------------------------------------------------------
 // boundaries
@@ -1346,6 +1063,7 @@ void SMCZone::F1E_ddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   for(int j=0;j<pcell->nb_num;j++)
   {
     int  nb = pcell->nb_array[j];
+    PetscScalar Vj = x[zofs[zone_index]+3*nb+0];     //potential of nb node
     //the poisson's equation on third boundary type
     if(j==0||j==pcell->nb_num-1)
     {
@@ -1355,7 +1073,6 @@ void SMCZone::F1E_ddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
       PetscScalar eps_ox = mt->eps0*pbc->eps;
       PetscScalar r=q + eps_ox/Thick*vgate;
       PetscScalar s=eps_ox/Thick;
-      PetscScalar Vj = x[zofs[zone_index]+3*nb+0];     //potential of nb node
       grad_P += 0.5*pcell->ilen[j]*(r-0.25*s*(3*Vi+Vj));
     }
   }
@@ -1821,7 +1538,6 @@ void SMCZone::J1E_ddm_inner(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_Formula 
     MatSetValues(*jac,3,index,3,col,A.m,INSERT_VALUES);
   }
   MatGetValues(*jtmp,3,index,3,index,A.m);
-  
   A=A/area;
 
   A.m[1] +=  -mt->e;   //dfun(0)/dn(i)
