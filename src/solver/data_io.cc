@@ -819,9 +819,9 @@ int BSolver::extract_ascii(char *filename)
     fprintf(fp,"t\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
             tri_index++,
             gtri[i].zone_index+1,
-            gtri[i].node[0]+1,
-            gtri[i].node[1]+1,
-            gtri[i].node[2]+1,
+            gtri[i].g_node[0]+1,
+            gtri[i].g_node[1]+1,
+            gtri[i].g_node[2]+1,
             -1,
             -1,
             -1);
