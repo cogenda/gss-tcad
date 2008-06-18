@@ -26,7 +26,9 @@
 #include "private/snesimpl.h"
 #include "src/snes/impls/tr/tr.h"
 #include "log.h"
-
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 /* ----------------------------------------------------------------------------
  * error_norm_pn_Mix2:  This function compute X and RHS error norms. 

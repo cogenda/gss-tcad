@@ -848,10 +848,11 @@ void GetGCRainbow (GC *gc, unsigned short R, unsigned short G,unsigned short B)
 /*****************************************************************************/
 /**************************  DUMP SCREEN FUNCTIONS  **************************/
 /*****************************************************************************/
+#ifdef   HAVE_TIFF
 #include <tiffio.h>
-
 int   GRSaveScreen (const char * tiff_file, int width, int height)
 {
+
   TIFF *fout= TIFFOpen(tiff_file, "w");
   if(!fout) return 1;
 
@@ -873,7 +874,7 @@ int   GRSaveScreen (const char * tiff_file, int width, int height)
       for (int k = 0; k < width; k++)
       {
         unsigned long c;
-        c = XGetPixel(ximage, k, i+j);        /* X pixel value */
+        c = XGetPixel(ximage, k, i+j);        // X pixel value 
         color[k+j*width].pixel = c;
       }
     XQueryColors(display, colormap, color, currentlines*width);
@@ -914,7 +915,14 @@ int   GRSaveScreen (const char * tiff_file, int width, int height)
   TIFFClose(fout);
   delete [] image;
   XDestroyImage(ximage);
+
   return 0;
 }
+#else
+int   GRSaveScreen (const char * tiff_file, int width, int height)
+{
+  return 0;
+}
+#endif
 
 #endif

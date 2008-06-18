@@ -1903,7 +1903,7 @@ void EBM_Solver_L3E::LET_norm_estimat(PetscScalar & r)
   VecRestoreArray(LTE,&ll);
   VecNorm(LTE,NORM_2,&r);
 
-  r/=sqrt(N);
+  r/=sqrt((PetscScalar)N);
 }
 
 
