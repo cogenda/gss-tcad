@@ -2098,7 +2098,7 @@ void DDM_Solver_L1E::LET_norm_estimat(PetscScalar & r)
   VecRestoreArray(LTE,&ll);
   VecNorm(LTE,NORM_2,&r);
       
-  r/=sqrt(N);
+  r/=sqrt((PetscScalar)N);
 }
 
 
