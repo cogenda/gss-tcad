@@ -837,7 +837,7 @@ int BSolver::extract_ascii(char *filename)
         gnode[zone[z].danode[i].g_index].zone_index = z;
       }
     }
-  fprintf(fp,"s\t%d Donor Accept n p v Ex Ey T\n",8);
+  fprintf(fp,"s\t%d Donor Accept n p v Ex Ey T Ec Ev Eqc Eqv phin phip\n",14);
 
   for(int i=0; i<gnode.size();i++)
   {
@@ -846,7 +846,7 @@ int BSolver::extract_ascii(char *filename)
     if(zonedata[z]->material_type == Semiconductor)
     {
       SMCZone *pzonedata = dynamic_cast<SMCZone *>(zonedata[z]);
-      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e\n",
+      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               i+1,
               zone[z].zonelabel,
               double(pzonedata->aux[j].Nd*pow(scale_unit.s_centimeter,3)),
@@ -856,13 +856,19 @@ int BSolver::extract_ascii(char *filename)
               double(pzonedata->fs[j].P/scale_unit.s_volt),
               double(pzonedata->aux[j].Ex/scale_unit.s_volt*scale_unit.s_centimeter),
               double(pzonedata->aux[j].Ey/scale_unit.s_volt*scale_unit.s_centimeter),
-              double(pzonedata->fs[j].T/scale_unit.s_kelvin));
+              double(pzonedata->fs[j].T/scale_unit.s_kelvin),
+	      double(pzonedata->aux[j].Ec/scale_unit.s_volt),
+	      double(pzonedata->aux[j].Ev/scale_unit.s_volt),
+	      double(pzonedata->fs[j].Eqc/scale_unit.s_volt),
+	      double(pzonedata->fs[j].Eqv/scale_unit.s_volt),
+	      double(pzonedata->aux[j].phin/scale_unit.s_volt),
+	      double(pzonedata->aux[j].phip/scale_unit.s_volt));
     }
 
     if(zonedata[z]->material_type == Insulator)
     {
       ISZone *pzonedata = dynamic_cast<ISZone *>(zonedata[z]);
-      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e\n",
+      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               i+1,
               zone[z].zonelabel,
               0.0,
@@ -872,13 +878,19 @@ int BSolver::extract_ascii(char *filename)
               double(pzonedata->fs[j].P/scale_unit.s_volt),
               double(pzonedata->aux[j].Ex/scale_unit.s_volt*scale_unit.s_centimeter),
               double(pzonedata->aux[j].Ey/scale_unit.s_volt*scale_unit.s_centimeter),
-              double(pzonedata->fs[j].T/scale_unit.s_kelvin));
+              double(pzonedata->fs[j].T/scale_unit.s_kelvin),
+	      0.0,
+	      0.0,
+	      0.0,
+	      0.0,
+	      0.0,
+	      0.0);
     }
 
     if(zonedata[z]->material_type == Conductor)
     {
       ElZone *pzonedata = dynamic_cast<ElZone *>(zonedata[z]);
-      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e\n",
+      fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
               i+1,
               zone[z].zonelabel,
               0.0,
@@ -888,7 +900,13 @@ int BSolver::extract_ascii(char *filename)
               double(pzonedata->fs[j].P/scale_unit.s_volt),
               double(pzonedata->aux[j].Ex/scale_unit.s_volt*scale_unit.s_centimeter),
               double(pzonedata->aux[j].Ey/scale_unit.s_volt*scale_unit.s_centimeter),
-              double(pzonedata->fs[j].T/scale_unit.s_kelvin));
+              double(pzonedata->fs[j].T/scale_unit.s_kelvin),
+	      0.0,
+	      0.0,
+	      0.0,
+	      0.0,
+              double((pzonedata->fs[j].P+pzonedata->aux[j].affinity)/scale_unit.s_volt),
+              double((pzonedata->fs[j].P+pzonedata->aux[j].affinity)/scale_unit.s_volt));
     }
   }
 
