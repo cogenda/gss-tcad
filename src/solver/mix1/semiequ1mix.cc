@@ -49,8 +49,8 @@ void SMCZone::F1E_mix_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula 
 
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -61,8 +61,8 @@ void SMCZone::F1E_mix_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula 
   }
   else     //Boltzmann
   {
-    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + mt->kb*fs[i].T/e*log(Nc/nie)
-                       + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) - pbc->Vapp;
+    f[zofs[z]+3*i+0] = Vi - kb*fs[i].T/e*asinh((Nd-Na)/(2*nie)) + kb*fs[i].T/2/e*log(Nc/Nv) + mt->band->Eg(fs[i].T)/2/e 
+                       + aux[i].affinity - pbc->Vapp;
     PetscScalar electron_density,hole_density;
     if(Na>Nd)   //p-type
     {
@@ -193,8 +193,8 @@ void SMCZone::J1E_mix_ddm_ombc(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_Formu
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+3*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
