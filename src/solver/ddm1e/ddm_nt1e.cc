@@ -2401,14 +2401,12 @@ void DDM_Solver_L1E::solution_update()
         pzonedata->aux[i].Ec = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity + pzonedata->mt->band->EgNarrowToEc(pzonedata->fs[i].T));//conduction band energy level
         pzonedata->aux[i].Ev = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity - pzonedata->mt->band->EgNarrowToEv(pzonedata->fs[i].T) + pzonedata->aux[i].Eg);//valence band energy level
         pzonedata->aux[i].phi_intrinsic = -0.5*( pzonedata->aux[i].Ec+pzonedata->aux[i].Ev + kb*pzonedata->fs[i].T*log(pzonedata->aux[i].Nv/pzonedata->aux[i].Nc))/e;
-#ifdef _FERMI_
         if (pzonedata->Fermi)
         {
-          pzonedata->aux[i].phin = -(pzonedata->aux[i].Ec + kb*zonedata->fs[i].T*fermi_mhalf(fabs(pzonedata->fs[i].n)/pzonedata->aux[i].Nc))/e;
-          pzonedata->aux[i].phip = -(pzonedata->aux[i].Ev - kb*zonedata->fs[i].T*fermi_mhalf(fabs(pzonedata->fs[i].p)/pzonedata->aux[i].Nv))/e;
+          pzonedata->aux[i].phin = -(pzonedata->aux[i].Ec + kb*pzonedata->fs[i].T*fermi_mhalf(fabs(pzonedata->fs[i].n)/pzonedata->aux[i].Nc))/e;
+          pzonedata->aux[i].phip = -(pzonedata->aux[i].Ev - kb*pzonedata->fs[i].T*fermi_mhalf(fabs(pzonedata->fs[i].p)/pzonedata->aux[i].Nv))/e;
         }
         else
-#endif
         {
           pzonedata->aux[i].phin = -(pzonedata->aux[i].Ec + kb*pzonedata->fs[i].T*log(fabs(pzonedata->fs[i].n)/pzonedata->aux[i].Nc))/e;
           pzonedata->aux[i].phip = -(pzonedata->aux[i].Ev - kb*pzonedata->fs[i].T*log(fabs(pzonedata->fs[i].p)/pzonedata->aux[i].Nv))/e;
