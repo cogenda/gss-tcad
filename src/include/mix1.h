@@ -44,6 +44,7 @@ public:
   KSP            ksp;          // linear solver context
   PC             pc;           // preconditioner context
   Vec            x,r;          // solution, residual vectors
+  Vec            x_n,x_n1,x_n2; // privious solution vector for LET evaluation
   Mat            J,JTmp;       // Jacobian matrix
   PetscInt       its;          // iteration number
   PetscReal      norm;

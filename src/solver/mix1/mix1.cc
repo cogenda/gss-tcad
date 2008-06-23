@@ -969,6 +969,8 @@ int DDM_Mix_Solver_L1E::init_solver(SolveDefine &sv)
 
   VecCreateSeq(PETSC_COMM_SELF,N,&x);
   VecDuplicate(x,&r);
+  VecDuplicate(x,&x_n);
+
   for(int i=0;i<Deviceinfo.term;i++)
   {
     VecDuplicate(x,&PINconds[i].pdI_pdw);
@@ -1027,6 +1029,7 @@ int DDM_Mix_Solver_L1E::init_solver(SolveDefine &sv)
   //
   VecAssemblyBegin(x);
   VecAssemblyEnd(x);
+  VecCopy(x,x_n);
 
   // Create Jacobian matrix data structure
   // pre-alloc approximate memory
@@ -1205,6 +1208,8 @@ int DDM_Mix_Solver_L1E::do_solve(SolveDefine &sv)
 int  DDM_Mix_Solver_L1E::DEV_LOAD()
 {
     PetscScalar    *xx;
+    int Converged=0;
+
     //receive terminal voltage of device
     for(int i=0;i<Deviceinfo.term;i++)
     {
@@ -1241,7 +1246,6 @@ int  DDM_Mix_Solver_L1E::DEV_LOAD()
         }
         if(ODE_formula.clock > CKTInfo.time*scale_unit.s_second)
         {
-          time_back_recovery();
           ODE_formula.BDF2_restart = true;
           gss_log.string_buf()<<"NGSPICE back trace...\n";
 	  gss_log.record();
@@ -1255,7 +1259,7 @@ int  DDM_Mix_Solver_L1E::DEV_LOAD()
       }
       ODE_formula.clock = CKTInfo.time*scale_unit.s_second;
       // call the real computation routine
-      tran_solve();
+      Converged=tran_solve();
     }
     //DC calculation settings
     else if(CKTInfo.CKTmode & MODEDC)
@@ -1272,9 +1276,12 @@ int  DDM_Mix_Solver_L1E::DEV_LOAD()
       ODE_formula.TimeDependent = false;
       ODE_formula.dt = 1e100;
       // call the real computation routine
-      dc_solve();
+      Converged=dc_solve();
     }
     
+    if(!Converged)
+      return 0;
+
     //get pdI/pdw, pdI/pdV and pdF/pdV for each electrode
     VecGetArray(x,&xx);
     for(int i=0;i<Deviceinfo.term;i++)
@@ -1311,7 +1318,7 @@ int  DDM_Mix_Solver_L1E::DEV_LOAD()
                                                PINconds[i].pdI_pdw,PINconds[i].pdF_pdV,
                                                xx,&J,ODE_formula,zofs,bc,DeviceDepth);  
           
-           }  
+           } 
         }
     }
     VecRestoreArray(x,&xx);
@@ -1378,17 +1385,23 @@ int DDM_Mix_Solver_L1E::tran_solve()
   
   do
   {
+    diverged_recovery();
     reason = SNES_CONVERGED_ITERATING;
     for(int w=1;w<=rework;w++)
     {
       ODE_formula.dt = w*CKTInfo.dt*scale_unit.s_second/rework;
       
+      gss_log.string_buf()<<"Solving: ";
       for(int i=0;i<Deviceinfo.term;i++)
       {
         PetscScalar V_step = PINinfos[i].V_old+(PINinfos[i].V-PINinfos[i].V_old)*w/rework;
         bc.Set_Vapp_nocase(PINinfos[i].name,V_step);
+        gss_log.string_buf()<<PINinfos[i].name<<":"<<V_step<<"V ";
       }
+      gss_log.string_buf()<<endl;
+      gss_log.record();
       
+ 
       SNESSolve(snes,PETSC_NULL,x);
       SNESGetConvergedReason(snes,&reason);
       if(reason<0)
@@ -1404,6 +1417,8 @@ int DDM_Mix_Solver_L1E::tran_solve()
     if(rework>max_rework) {Converged = 0; break;}
   }  while(1);
   
+  CKTInfo.convergence_flag = reason;
+  send(client,&(CKTInfo),sizeof(sCKTinfo),0);
   return Converged;
 }
 
@@ -1427,20 +1442,72 @@ int DDM_Mix_Solver_L1E::dc_solve()
       pzonedata->Fermi                = psv->Fermi;
       pzonedata->EJModel              = psv->EJModel;
     }
+
+  // for DC_solve, we can first try our luck with the previous solution
+  reason = SNES_CONVERGED_ITERATING;
+  gss_log.string_buf()<<"Using previous solution as initial guess: ";
+  for(int i=0;i<Deviceinfo.term;i++)
+  {
+    bc.Set_Vapp_nocase(PINinfos[i].name,PINinfos[i].V);
+    gss_log.string_buf()<<PINinfos[i].name<<":"<<PINinfos[i].V<<"V  ";
+  }
+  gss_log.string_buf()<<endl;
+  gss_log.record();
+      
+  VecCopy(x_n,x);
+  SNESSolve(snes,PETSC_NULL,x);
+  SNESGetConvergedReason(snes,&reason);
+  if(reason>0) {        
+    VecCopy(x,x_n);
+    Converged=1; 
+    goto end_dc_solve;
+  }
+
+  // Nope, we aren't so lucky, shall recover the last (accepted and saved) state
+  gss_log.string_buf()<<"------> GSS mixed solver "<<SNESConvergedReasons[reason]<<", do recovery...\n\n\n";
+  gss_log.record();
+
+  if(fabs(psv->VStepMax)>0)
+  { 
+    for(int i=0;i<Deviceinfo.term;i++)
+      if(fabs(PINinfos[i].V-PINinfos[i].V_old)>psv->VStepMax)
+      {
+        gss_log.string_buf()<<"------> GSS mixed solver: Too far from the previous state. Reject!\n\n\n";
+        gss_log.record();
+        // The requested voltage is too far from the previous state. We refuse to solve this
+        reason = SNES_DIVERGED_FUNCTION_DOMAIN;
+        Converged=0;
+        goto end_dc_solve;
+      }
+  }
+
+  // Determine a suitable step.
+  if(fabs(psv->VStep)>0)
+  { 
+    for(int i=0;i<Deviceinfo.term;i++)
+    {
+      PetscInt tw = (PetscInt) fabs(PINinfos[i].V-PINinfos[i].V_old) / psv->VStep;
+      if(tw>rework)
+        rework = tw;
+    }
+  }
+  max_rework = rework*64;
   
+  diverged_recovery();
+  VecCopy(x,x_n);
   do
   {
     reason = SNES_CONVERGED_ITERATING;
-    for(int w=1;w<=rework;w++)
+    for(int w=1;w<=rework && rework<=max_rework;)
     {
-      gss_log.string_buf()<<"Solving\t";
+      gss_log.string_buf()<<"Solving: ";
       for(int i=0;i<Deviceinfo.term;i++)
       {
         PetscScalar V_step = PINinfos[i].V_old+(PINinfos[i].V-PINinfos[i].V_old)*w/rework;
         bc.Set_Vapp_nocase(PINinfos[i].name,V_step);
-        gss_log.string_buf()<<"V("<<PINinfos[i].name<<") = "<<V_step<<"V  ";
+        gss_log.string_buf()<<PINinfos[i].name<<":"<<V_step<<"V ";
       }
-      gss_log.string_buf()<<"\n";
+      gss_log.string_buf()<<endl;
       gss_log.record();
       
       SNESSolve(snes,PETSC_NULL,x);
@@ -1449,14 +1516,24 @@ int DDM_Mix_Solver_L1E::dc_solve()
       {
         gss_log.string_buf()<<"------> GSS mixed solver "<<SNESConvergedReasons[reason]<<", do recovery...\n\n\n";
         gss_log.record();
-        diverged_recovery();
+        VecCopy(x_n,x);
         rework*=2;
-        break;
+        w=w*2-1;
+      }
+      else
+      {
+        //save solution
+        VecCopy(x,x_n);
+        w++;
       }
     }
     if(reason>0) {Converged = 1; break;}
     if(rework>max_rework) {Converged = 0; break;}
   }  while(1);
+ 
+end_dc_solve:
+  CKTInfo.convergence_flag = reason;
+  send(client,&(CKTInfo),sizeof(sCKTinfo),0);
   
   return Converged;
 }
@@ -1545,6 +1622,8 @@ void DDM_Mix_Solver_L1E::solution_update()
   ODE_formula.dt_last = ODE_formula.dt;
 
   VecRestoreArray(x,&xx);
+  gss_log.string_buf()<<"------> GSS mixed solver: Current state accepted and saved.\n\n\n";
+  gss_log.record();
 }
 
 
@@ -1677,6 +1756,7 @@ int DDM_Mix_Solver_L1E::destroy_solver(SolveDefine &sv)
     VecDestroy(PINconds[i].pdw_pdV);
   }
   VecDestroy(x);
+  VecDestroy(x_n);
   VecDestroy(r);
   MatDestroy(J);
   MatDestroy(JTmp);
