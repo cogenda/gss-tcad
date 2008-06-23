@@ -28,8 +28,8 @@ PMIS region=Si mobility=Lucent
 #------------------------------------------------------------------------------
 # IMPORT NMOS MODEL
 IMPORT   CoreFile=nmos_init.cgns
-METHOD   Type = DDML1MIX   Scheme = Newton  NS=Basic LS=GMRES ServerPort=17001
-SOLVE    
+METHOD   Type = DDML1MIX   Scheme = Newton  NS=Basic LS=LU Damping=Potential ServerPort=17001
+SOLVE    VStep=1.0 VStepMax=10.0
 
 END
 

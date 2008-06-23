@@ -33,7 +33,8 @@ MB2 VOUT P_C1 0 0       MNM PS=5u PD=5u AS=2p AD=2p W=1.5u L=1.25u
 .MODEL NMOS NDEV  remote=localhost port=17001
 .MODEL PMOS NDEV  remote=localhost port=17002
 
+.NODESET V(P_R1)=5.0
 .OPTION acct itl2=100 icstep=2e12
-.TRAN 1ps 9ns 
+.TRAN 20ps 9ns 
 .plot tran v(vout)
 .END
