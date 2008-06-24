@@ -2399,7 +2399,7 @@ void DDM_Solver_L1E::solution_update()
         pzonedata->mt->mapping(&pzonedata->pzone->danode[i],&pzonedata->aux[i],0);
         PetscScalar nie = pzonedata->mt->band->nie(pzonedata->fs[i].T);
         pzonedata->aux[i].Ec = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity + pzonedata->mt->band->EgNarrowToEc(pzonedata->fs[i].T));//conduction band energy level
-        pzonedata->aux[i].Ev = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity - pzonedata->mt->band->EgNarrowToEv(pzonedata->fs[i].T) + pzonedata->aux[i].Eg);//valence band energy level
+        pzonedata->aux[i].Ev = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity - pzonedata->mt->band->EgNarrowToEv(pzonedata->fs[i].T) + pzonedata->mt->band->Eg(pzonedata->fs[i].T));//valence band energy level
         pzonedata->aux[i].phi_intrinsic = -0.5*( pzonedata->aux[i].Ec+pzonedata->aux[i].Ev + kb*pzonedata->fs[i].T*log(pzonedata->aux[i].Nv/pzonedata->aux[i].Nc))/e;
         if (pzonedata->Fermi)
         {

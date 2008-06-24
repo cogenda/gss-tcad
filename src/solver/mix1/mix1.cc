@@ -1568,7 +1568,7 @@ void DDM_Mix_Solver_L1E::solution_update()
         pzonedata->mt->mapping(&pzonedata->pzone->danode[i],&pzonedata->aux[i],0);
         PetscScalar nie = pzonedata->mt->band->nie(pzonedata->fs[i].T);
         pzonedata->aux[i].Ec = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity + pzonedata->mt->band->EgNarrowToEc(pzonedata->fs[i].T));//conduction band energy level
-        pzonedata->aux[i].Ev = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity - pzonedata->mt->band->EgNarrowToEv(pzonedata->fs[i].T) + pzonedata->aux[i].Eg);//valence band energy level
+	pzonedata->aux[i].Ev = -(e*pzonedata->fs[i].P + pzonedata->aux[i].affinity - pzonedata->mt->band->EgNarrowToEv(pzonedata->fs[i].T) + pzonedata->mt->band->Eg(pzonedata->fs[i].T));//valence band energy level
         pzonedata->aux[i].phi_intrinsic = -0.5*( pzonedata->aux[i].Ec+pzonedata->aux[i].Ev + kb*pzonedata->fs[i].T*log(pzonedata->aux[i].Nv/pzonedata->aux[i].Nc))/e;
         if (pzonedata->Fermi)
         {
@@ -1580,6 +1580,8 @@ void DDM_Mix_Solver_L1E::solution_update()
           pzonedata->aux[i].phin = -(pzonedata->aux[i].Ec + kb*pzonedata->fs[i].T*log(fabs(pzonedata->fs[i].n)/pzonedata->aux[i].Nc))/e;
           pzonedata->aux[i].phip = -(pzonedata->aux[i].Ev - kb*pzonedata->fs[i].T*log(fabs(pzonedata->fs[i].p)/pzonedata->aux[i].Nv))/e;
         }
+	pzonedata->fs[i].Eqc = -e*(pzonedata->fs[i].P+pzonedata->aux[i].affinity);
+        pzonedata->fs[i].Eqv = -e*(pzonedata->fs[i].P+pzonedata->aux[i].affinity+pzonedata->aux[i].Eg);
         offset += 3;
       }
       pzonedata->F1E_efield_update(xx,zofs,bc,zonedata);
