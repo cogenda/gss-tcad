@@ -1,3 +1,9 @@
+2008-07-03 Shen Chen <shenchen@nus.edu.sg>
+  Fixed a bug in exporting mesh structure in TIF format.
+
+2008-06-17 Shen Chen <shenchen@nus.edu.sg>
+  Fixed a bug in exporting mesh structure in TIF format.
+
 2008-05-22 Shen Chen <shenchen@nus.edu.sg>
   Fixed a bug in calculating effective intrinsic carrier density due to bandgap narrowing.
 
