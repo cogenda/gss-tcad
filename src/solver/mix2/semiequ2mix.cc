@@ -50,8 +50,8 @@ void SMCZone::F2E_mix_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_
 
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -62,8 +62,8 @@ void SMCZone::F2E_mix_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_
   }
   else
   {
-    f[zofs[z]+4*i+0] =  Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie)
-                        + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T) - pbc->Vapp;
+    f[zofs[z]+4*i+0] =  Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) +  kb*fs[i].T/2/e*log(Nc/Nv) + mt->band->Eg(fs[i].T)/2/mt->e 
+                        + aux[i].affinity - pbc->Vapp;
 
     if(Na>Nd)   //p-type
     {
@@ -141,8 +141,8 @@ void SMCZone::F2E_mix_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, OD
 
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -152,8 +152,8 @@ void SMCZone::F2E_mix_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, OD
     f[zofs[z]+4*i+2] = pi - Nv*fermi_half(etap);
   }
   {
-    f[zofs[z]+4*i+0] =  Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie)
-                        + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T) - pbc->Vapp;
+    f[zofs[z]+4*i+0] =  Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) +  kb*fs[i].T/2/e*log(Nc/Nv) + mt->band->Eg(fs[i].T)/2/mt->e 
+                        + aux[i].affinity - pbc->Vapp;
 
     if(Na>Nd)   //p-type
     {
@@ -462,8 +462,8 @@ void SMCZone::J2E_mix_ddm_ombc_segment(int i,PetscScalar *x,Mat *jac,Mat *jtmp,O
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+4*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -552,8 +552,8 @@ void SMCZone::J2E_mix_ddm_ombc_interface(int i,PetscScalar *x,Mat *jac,Mat *jtmp
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+4*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = pbc->Vapp;
     PetscScalar phip = pbc->Vapp;
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;

@@ -74,8 +74,14 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar pa = x[zofs[zone_index]+3*A+2];     //hole density of node A
   mt->mapping(&pzone->danode[A],&aux[A],0);
 
-  PetscScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  // NOTE: Eca, Eva are not the conduction/valence band energy.
+  // They are here for the calculation of effective driving field for electrons and holes
+  // They differ from the conduction/valence band energy by the term with log(Nc), which
+  // takes care of the change effective DOS.
+  // Eca should not be used except when its difference between two nodes.
+  // The same comment applies to Ecb/Evb and Ecc/Evc.
+  PetscScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc)); 
+  PetscScalar Eva =  -(e*Va + aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv) +Eg);
   PetscScalar Ra = mt->band->Recomb(pa,na,fs[A].T);
   PetscScalar etana;
   PetscScalar etapa;
@@ -98,8 +104,8 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar nb = x[zofs[zone_index]+3*B+1];     //electron density of node B
   PetscScalar pb = x[zofs[zone_index]+3*B+2];     //hole density of node B
   mt->mapping(&pzone->danode[B],&aux[B],0);
-  PetscScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  PetscScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc)); 
+  PetscScalar Evb =  -(e*Vb + aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ Eg); 
   PetscScalar Rb = mt->band->Recomb(pb,nb,fs[B].T);
   PetscScalar etanb; 
   PetscScalar etapb; 
@@ -122,8 +128,8 @@ void SMCZone::F1E_Tri_ddm(Tri *ptri,PetscScalar *x,PetscScalar *f, vector<int> &
   PetscScalar nc = x[zofs[zone_index]+3*C+1];     //electron density of node C
   PetscScalar pc = x[zofs[zone_index]+3*C+2];     //hole density of node C
   mt->mapping(&pzone->danode[C],&aux[C],0);
-  PetscScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  PetscScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  PetscScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc)); 
+  PetscScalar Evc =  -(e*Vc + aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv) + Eg); 
   PetscScalar Rc = mt->band->Recomb(pc,nc,fs[C].T);
   PetscScalar etanc;
   PetscScalar etapc;
@@ -551,8 +557,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   na.setADValue(1,1.0);
   pa.setADValue(2,1.0);
   mt->mapping(&pzone->danode[A],&aux[A],0);
-  AutoDScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Eva =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  AutoDScalar Eca =  -(e*Va + aux[A].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[A].Nc)); 
+  AutoDScalar Eva =  -(e*Va + aux[A].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[A].Nv) +Eg);
   AutoDScalar Ra = mt->band->Recomb(pa,na,TD);
   PetscScalar etana;
   PetscScalar etapa;
@@ -578,8 +584,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   nb.setADValue(4,1.0);
   pb.setADValue(5,1.0);
   mt->mapping(&pzone->danode[B],&aux[B],0);
-  AutoDScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Evb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  AutoDScalar Ecb =  -(e*Vb + aux[B].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[B].Nc)); 
+  AutoDScalar Evb =  -(e*Vb + aux[B].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[B].Nv)+ Eg); 
   AutoDScalar Rb = mt->band->Recomb(pb,nb,TD);
   PetscScalar etanb; 
   PetscScalar etapb; 
@@ -605,8 +611,8 @@ void SMCZone::J1E_Tri_ddm(Tri *ptri,PetscScalar *x,Mat *jtmp, vector<int> & zofs
   nc.setADValue(7,1.0);
   pc.setADValue(8,1.0);
   mt->mapping(&pzone->danode[C],&aux[C],0);
-  AutoDScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T)); //conduction band energy level
-  AutoDScalar Evc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + Eg); //valence band energy level
+  AutoDScalar Ecc =  -(e*Vc + aux[C].affinity + mt->band->EgNarrowToEc(T) + kb*T*log(aux[C].Nc)); 
+  AutoDScalar Evc =  -(e*Vc + aux[C].affinity - mt->band->EgNarrowToEv(T) - kb*T*log(aux[C].Nv) + Eg); 
   AutoDScalar Rc = mt->band->Recomb(pc,nc,TD);
   PetscScalar etanc;
   PetscScalar etapc;
