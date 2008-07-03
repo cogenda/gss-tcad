@@ -1291,14 +1291,15 @@ void SMCZone::F3E_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_Form
   mt->mapping(&pzone->danode[i],&aux[i],ODE_F.clock);
   PetscScalar nie = mt->band->nie(fs[i].T);
   PetscScalar Nc  = mt->band->Nc(fs[i].T);
+  PetscScalar Nv  = mt->band->Nv(fs[i].T);
   PetscScalar electron_density,hole_density;
   int    om_equ;
   for(int j=0;j<electrode.size();j++)
     if(electrode[j]==pcell->bc_index-1)   { om_equ=j; break; }
   
-  f[zofs[z]+6*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie) 
-                     + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-		     - x[zofs[z]+equ_num*size+om_equ];
+  f[zofs[z]+6*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) + mt->kb*fs[i].T/2/mt->e*log(Nc/Nv) 
+                       + mt->band->Eg(fs[i].T)/2/mt->e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
                                          
   if(Na>Nd)   //p-type
   {
@@ -1372,14 +1373,15 @@ void SMCZone::F3E_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   mt->mapping(&pzone->danode[i],&aux[i],ODE_F.clock);
   PetscScalar nie = mt->band->nie(fs[i].T);
   PetscScalar Nc  = mt->band->Nc(fs[i].T);
+  PetscScalar Nv  = mt->band->Nv(fs[i].T);
   PetscScalar electron_density,hole_density;
   int    om_equ;
   for(int j=0;j<electrode.size();j++)
     if(electrode[j]==pcell->bc_index-1)   { om_equ=j; break; }
   
-  f[zofs[z]+6*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie) 
-                     + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-		     - x[zofs[z]+equ_num*size+om_equ];
+  f[zofs[z]+6*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) + mt->kb*fs[i].T/2/mt->e*log(Nc/Nv) 
+                       + mt->band->Eg(fs[i].T)/2/mt->e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
                                          
   if(Na>Nd)   //p-type
   {

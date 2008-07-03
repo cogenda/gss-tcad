@@ -1480,8 +1480,8 @@ void SMCZone::F2E_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_Form
   
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T)); 
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -1492,9 +1492,9 @@ void SMCZone::F2E_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_Form
   }
   else   //Boltzmann
   {
-    f[zofs[z]+4*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie) 
-                       + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-            	       - x[zofs[z]+equ_num*size+om_equ];
+    f[zofs[z]+4*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) + mt->kb*fs[i].T/2/e*log(Nc/Nv) 
+                       + mt->band->Eg(fs[i].T)/2/mt->e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
     if(Na>Nd)   //p-type
     {
       hole_density = (-(Nd-Na)+sqrt((Nd-Na)*(Nd-Na)+4*nie*nie))/2.0;
@@ -1581,8 +1581,8 @@ void SMCZone::F2E_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   
   if(Fermi) //Fermi
   {
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T)); 
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -1593,9 +1593,9 @@ void SMCZone::F2E_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   }
   else   //Boltzmann
   {
-    f[zofs[z]+4*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie))  + mt->kb*fs[i].T/mt->e*log(Nc/nie) 
-                       + aux[i].affinity  + mt->band->EgNarrowToEc(fs[i].T)
-		       - x[zofs[z]+equ_num*size+om_equ];
+    f[zofs[z]+4*i+0] = Vi - kb*fs[i].T/mt->e*asinh((Nd-Na)/(2*nie)) + mt->kb*fs[i].T/2/e*log(Nc/Nv) 
+                       + mt->band->Eg(fs[i].T)/2/mt->e 
+                       + aux[i].affinity -x[zofs[z]+equ_num*size+om_equ];
 
     if(Na>Nd)   //p-type
     {
@@ -2504,8 +2504,8 @@ void SMCZone::J2E_ddm_ombc_segment(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_F
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+4*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) );
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
@@ -2611,8 +2611,8 @@ void SMCZone::J2E_ddm_ombc_interface(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE
     PetscScalar Nc  = mt->band->Nc(fs[i].T);
     PetscScalar Nv  = mt->band->Nv(fs[i].T);
     PetscScalar Vi = x[zofs[zone_index]+4*i+0];     //potential of node i
-    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
-    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);
+    PetscScalar Ec =  -(e*Vi + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T)); 
+    PetscScalar Ev =  -(e*Vi + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) + mt->band->Eg(fs[i].T));
     PetscScalar phin = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
