@@ -82,8 +82,8 @@ private:
     D2N_VALD = 5.670300E-01*V/(cm*K*K);
     D2P_VALD = 1.482900E+00*V/(cm*K*K);
     //
-    ElecTauw  = 2e-13*s;
-    HoleTauw  = 2e-13*s;
+    ElecTauw  = 6.800000E-13*s;
+    HoleTauw  = 2.000000E-13*s;
     T300      = 300.0*K;
   }
 public:

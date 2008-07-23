@@ -156,6 +156,8 @@ BEGIN  PARAMETERS;
 <PARAMETERS>Y"."Bottom      |
 <PARAMETERS>Y"."Max         |
 <PARAMETERS>Y"."Top         |
+<PARAMETERS>X"."OFFSET      |
+<PARAMETERS>Y"."OFFSET      |
 <PARAMETERS>CentreX         |
 <PARAMETERS>CentreY         |
 <PARAMETERS>MajorRadii      |
@@ -163,11 +165,11 @@ BEGIN  PARAMETERS;
 <PARAMETERS>Theta           |
 <PARAMETERS>Ratio           |
 <PARAMETERS>Encroach        |
-<PARAMETERS>Y.Lower         |
+<PARAMETERS>Y"."Lower       |
 <PARAMETERS>VOL.RAT         |
 <PARAMETERS>Grading         |
 <PARAMETERS>Middle          |
-<PARAMETERS>Y.Middle        |
+<PARAMETERS>Y"."Middle      |
 <PARAMETERS>GR1             |
 <PARAMETERS>GR2             |
 <PARAMETERS>N"."Peak        |
@@ -179,7 +181,7 @@ BEGIN  PARAMETERS;
 <PARAMETERS>X"."MOLE        |
 <PARAMETERS>Mole"."Slope    |
 <PARAMETERS>Mole"."End      |
-<PARAMETERS>Z.Width         |
+<PARAMETERS>Z"."Width       |
 <PARAMETERS>LatticeTemp     |
 <PARAMETERS>DopingScale     |
 <PARAMETERS>Tdelay          |
@@ -291,9 +293,10 @@ BEGIN  PARAMETERS;
 <PARAMETERS>Material         |
 <PARAMETERS>Location         |
 <PARAMETERS>Shape            |
-<PARAMETERS>Mole.Grad        |
+<PARAMETERS>Mole"."Grad      |
 <PARAMETERS>ModelFile        |
 <PARAMETERS>Triangle         |
+<PARAMETERS>Arg              |
 <PARAMETERS>Ion              |
 <PARAMETERS>Carrier          |
 <PARAMETERS>Type             |
@@ -302,8 +305,8 @@ BEGIN  PARAMETERS;
 <PARAMETERS>Measure          |
 <PARAMETERS>Region           |
 <PARAMETERS>Mobility         |
-<PARAMETERS>II.Model         |
-<PARAMETERS>Optical.Model    |
+<PARAMETERS>II"."Model       |
+<PARAMETERS>Optical"."Model  |
 <PARAMETERS>Scheme           |
 <PARAMETERS>NS               |
 <PARAMETERS>LS               |
@@ -314,6 +317,9 @@ BEGIN  PARAMETERS;
 <PARAMETERS>CoreFile         |
 <PARAMETERS>AscFile          |
 <PARAMETERS>VTKFile          |
+<PARAMETERS>AcceptorFile     |
+<PARAMETERS>DonorFile        |
+<PARAMETERS>In"."File        |
 <PARAMETERS>Segment          |
 <PARAMETERS>ProbeFile        |
 <PARAMETERS>Electrode        |
@@ -327,8 +333,8 @@ BEGIN  PARAMETERS;
 <PARAMETERS>VApp             |
 <PARAMETERS>IApp             |
 <PARAMETERS>Resolution       |
-<PARAMETERS>PS.Out           |
-<PARAMETERS>TIFF.Out         |
+<PARAMETERS>PS"."Out         |
+<PARAMETERS>TIFF"."Out       |
 <PARAMETERS>Style                             {
 
 #ifdef DEBUG
@@ -344,7 +350,8 @@ BEGIN  PARAMETERS;
 }
 
 
-<PARAMETERS>Fix.Lower         |
+<PARAMETERS>Fix"."Lower       |
+<PARAMETERS>Inv"."Y           |
 <PARAMETERS>HighFieldMobility | 
 <PARAMETERS>ImpactIonization  |
 <PARAMETERS>BandBandTunneling |
@@ -476,7 +483,7 @@ BEGIN  PARAMETERS;
 
 
 
-<PARAMETERS>\"[a-zA-Z0-9\.\_\ \-]*\"          {
+<PARAMETERS>\"[a-zA-Z0-9\.\_\ \-\+]*\"          {
         yytext[yyleng-1]='\0';
 #ifdef DEBUG
         printf("STRING:%s",&yytext[1]);

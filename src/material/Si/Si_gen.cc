@@ -61,8 +61,8 @@ private:
     LAP300    =  6.320790e-07*cm;
     OP_PH_EN  =  6.300000e-02*eV;
     //
-    ElecTauw  = 2e-13*s;
-    HoleTauw  = 2e-13*s;
+    ElecTauw  = 6.800000E-13*s;
+    HoleTauw  = 2.000000E-13*s;
     T300      = 300.0*K;
   }
 public:

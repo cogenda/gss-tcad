@@ -1,15 +1,47 @@
+2008-07-03 Shen Chen <shenchen@nus.edu.sg>
+  Fixed a bug in exporting mesh structure in TIF format.
+
+2008-06-17 Shen Chen <shenchen@nus.edu.sg>
+  Fixed a bug in exporting mesh structure in TIF format.
+
 2008-05-22 Shen Chen <shenchen@nus.edu.sg>
   Fixed a bug in calculating effective intrinsic carrier density due to bandgap narrowing.
 
 2008-04-29 Shen Chen <shenchen@nus.edu.sg>
   Improved autoconf setup for building dynamic library in Darwin/Mac 
 
+2008-03-30 Gong Ding <gdiso@ustc.edu>
+  Prepare to add impurity/diffusion function to GSS. many files changed
+  * src/include/soldata.h:          Add impurity atom: phosphorus, arsenic, antimony and boron
+  * src/runctrl/ctrl.cc:            
+  * src/solver/data_init.cc:
+  * src/solver/data_io.cc:
+  * src/include/PMI.h:
+  * src/solver/refine.cc:
+  * src/solver/ddm1e/semiequ1e.cc: Support impurity atoms
+  * src/solver/ddm2e/semiequ2e.cc:
+  * src/solver/ebm3e/semiequ3e.cc:
+  * src/solver/mix1/semiequ1mix.cc:
+  * src/solver/mix2/semiequ2mix.cc:
+  * src/solver/qddm1e/semiequ1q.cc:
+  
+2008-03-14 Gong Ding <gdiso@ustc.edu>
+  * src/utils/csa/*.* :            Add csa (Cubic Spline approximation) library to GSS
+
+2008-03-11 Gong Ding <gdiso@ustc.edu>
+  * src/include/solverdef.h:       Add const int TempII
+  * src/runctrl/ctrl.cc:           Add Temp.II to IIType
+  * src/include/PMI.h:             Change PMIS_Avalanche function ElecGenRateEBM and HoleGenRateEBM define
+  * src/material/*:                Change function ElecGenRateEBM and HoleGenRateEBM define for each semiconductor material       
+  * src/solver/ebm3e/ebm_nt3e.cc:  Modified the damping function
+  * src/solver/ebm3e/semiequ3e.cc: Add Impact Ionization
+   
 2008-03-10 Gong Ding <gdiso@ustc.edu>
   * src/solver/ddm2e/semiequ2.cc:        Add Fermi statistics support  
   * src/solver/mix2/semiequ2mix.cc:      Add Fermi statistics support  
 
 2008-03-09 Gong Ding <gdiso@ustc.edu>
-  * src/solver/mix1/semiequ1mix.cc:      Fix the bug of ohmic load function when Fermi statistics is used.
+  * src/solver/mix1/semiequ2mix.cc:      Fix the bug of ohmic load function when Fermi statistics is used.
   
 2008-03-02 Gong Ding <gdiso@ustc.edu>
   Add LTE based auto time step control to DDML2E and EBML3E. 

@@ -43,7 +43,9 @@ public:
   PetscScalar         phi_intrinsic;
   PetscScalar         Nc,Nv;
   PetscScalar         eps,mu;
-  PetscScalar         Na,Nd;         //doping profile
+  PetscScalar         Na,Nd;         //general doping profile
+  PetscScalar         P,As,Sb;       //detailed donor atom: phosphorus, arsenic and antimony
+  PetscScalar         B;             //detailed acceptor atom: boron
   PetscScalar         mole_x,mole_y;
   PetscScalar         Ex,Ey;
   PetscScalar         mun,mup;
@@ -51,9 +53,15 @@ public:
   PetscScalar         OpHx,OpHy,OpHz;
   PetscScalar         OptG;//dot not plot this variable
   PetscScalar         RealOptG;//for transient case
+  PetscScalar         Total_Na()     {return Na+B;}
+  PetscScalar         Total_Nd()     {return Nd+P+As+Sb;}
+  PetscScalar         Net_doping()   {return Total_Nd()-Total_Na();}
+  PetscScalar         Total_doping() {return Total_Nd()+Total_Na();}
+  
   SemiAuxData()
   {
     Na=Nd=0;
+    As=P=B=Sb=0;
     Ex=Ey=0;
     phi_intrinsic=phin=phip=0;
     mole_x=mole_y=0;

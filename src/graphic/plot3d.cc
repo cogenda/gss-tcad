@@ -133,11 +133,23 @@ void BSolver::plot_data(PlotDefine &plot)
     Measure = FunSignedLog10;
 
   //data for semiconductor zone only
-  if(plot.Variable==Doping||plot.Variable==DopingNd||plot.Variable==DopingNa||
-      plot.Variable==ElecDensity||plot.Variable==HoleDensity||
-      plot.Variable==ElecTemp||plot.Variable==HoleTemp||
-      plot.Variable==PhiP||plot.Variable==PhiN||plot.Variable==Phi_Intrinsic||
-      plot.Variable==QuantumEc||plot.Variable==QuantumEv||
+  if( plot.Variable==Doping       ||
+      plot.Variable==DopingNd     ||
+      plot.Variable==DopingNa     ||
+      plot.Variable==NetDoping    ||
+      plot.Variable==Phosphorus   ||
+      plot.Variable==Arsenic      ||
+      plot.Variable==Antimony     ||
+      plot.Variable==Boron        ||
+      plot.Variable==ElecDensity  ||
+      plot.Variable==HoleDensity  ||
+      plot.Variable==ElecTemp     ||
+      plot.Variable==HoleTemp     ||
+      plot.Variable==PhiP         ||
+      plot.Variable==PhiN         ||
+      plot.Variable==Phi_Intrinsic||
+      plot.Variable==QuantumEc    ||
+      plot.Variable==QuantumEv    ||
       plot.Variable==OpticalG)
   {
     for(int z=0;z<zone_num;z++)
@@ -172,12 +184,22 @@ void BSolver::plot_data(PlotDefine &plot)
           switch(plot.Variable)
           {
           case DopingNd:
-            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].Nd*pow(scale_unit.s_centimeter,3));break;
+            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].Total_Nd()*pow(scale_unit.s_centimeter,3));break;
           case DopingNa:
-            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].Na*pow(scale_unit.s_centimeter,3));break;
+            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].Total_Na()*pow(scale_unit.s_centimeter,3));break;
           case Doping:
-            apnt3dInput[j+offset].z = Measure((pzonedata->aux[j].Nd-pzonedata->aux[j].Na)*pow(scale_unit.s_centimeter,3));break;
-          case ElecDensity:
+            apnt3dInput[j+offset].z = Measure((pzonedata->aux[j].Total_doping())*pow(scale_unit.s_centimeter,3));break;
+          case NetDoping:
+            apnt3dInput[j+offset].z = Measure((pzonedata->aux[j].Net_doping())*pow(scale_unit.s_centimeter,3));break;
+	  case Phosphorus:
+            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].P*pow(scale_unit.s_centimeter,3));break;
+          case Arsenic:
+            apnt3dInput[j+offset].z = Measure(pzonedata->aux[j].As*pow(scale_unit.s_centimeter,3));break;
+          case Antimony:
+            apnt3dInput[j+offset].z = Measure((pzonedata->aux[j].Sb)*pow(scale_unit.s_centimeter,3));break;
+          case Boron:
+            apnt3dInput[j+offset].z = Measure((pzonedata->aux[j].B)*pow(scale_unit.s_centimeter,3));break;
+	  case ElecDensity:
             apnt3dInput[j+offset].z = Measure(fabs(pzonedata->fs[j].n)*pow(scale_unit.s_centimeter,3));break;
           case HoleDensity:
             apnt3dInput[j+offset].z = Measure(fabs(pzonedata->fs[j].p)*pow(scale_unit.s_centimeter,3));break;
@@ -205,12 +227,15 @@ void BSolver::plot_data(PlotDefine &plot)
   }
 
   // data for semiconductor zone, insulator zone and electrode zone
-  if(plot.Variable==Potential||plot.Variable==EFieldX||plot.Variable==EFieldY||plot.Variable==Temperature)
+  if(plot.Variable==Potential ||
+     plot.Variable==EFieldX   ||
+     plot.Variable==EFieldY   ||
+     plot.Variable==Temperature)
   {
     for(int z=0;z<zone_num;z++)
     {
       if(zonedata[z]->material_type == Semiconductor ||
-          zonedata[z]->material_type == Insulator ||
+          zonedata[z]->material_type == Insulator    ||
           zonedata[z]->material_type == Conductor)
       {
         nodes += zone[z].danode.size();
@@ -224,7 +249,7 @@ void BSolver::plot_data(PlotDefine &plot)
     for(int z=0;z<zone_num;z++)
     {
       if(zonedata[z]->material_type == Semiconductor ||
-          zonedata[z]->material_type == Insulator ||
+          zonedata[z]->material_type == Insulator    ||
           zonedata[z]->material_type == Conductor)
       {
         for(int i=0;i<zone[z].datri.size();i++)
@@ -304,8 +329,12 @@ void BSolver::plot_data(PlotDefine &plot)
   }
 
   // data for all zones
-  if(plot.Variable==OpticalEx||plot.Variable==OpticalEy||plot.Variable==OpticalEz||plot.Variable==OpticalHx||
-      plot.Variable==OpticalHy||plot.Variable==OpticalHz)
+  if(plot.Variable==OpticalEx ||
+     plot.Variable==OpticalEy ||
+     plot.Variable==OpticalEz ||
+     plot.Variable==OpticalHx ||
+     plot.Variable==OpticalHy ||
+     plot.Variable==OpticalHz)
   {
     for(int z=0;z<zone_num;z++)
     {

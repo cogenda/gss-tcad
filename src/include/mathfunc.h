@@ -267,14 +267,14 @@ inline PetscScalar fermi_half(PetscScalar x)
   }
   else if(x<0.0)
   {
-    PetscScalar v = pow(x,4) + 50 + 33.6*x*(1-0.68*exp(-0.17*(x+1)*(x+1)));
-    PetscScalar p = 1.329340388179*pow(v,PetscScalar(-0.375));
+    PetscScalar v = std::pow(x,4) + 50 + 33.6*x*(1-0.68*exp(-0.17*(x+1)*(x+1)));
+    PetscScalar p = 1.329340388179*std::pow(v,PetscScalar(-0.375));
     return 1.0/(exp(-x) + p);
   }
   else
   {
-    PetscScalar v = pow(x,4) + 50 + 33.6*x*(1-0.68*exp(-0.17*(x+1)*(x+1)));
-    PetscScalar p = 1.329340388179*pow(v,PetscScalar(-0.375));
+    PetscScalar v = std::pow(x,4) + 50 + 33.6*x*(1-0.68*exp(-0.17*(x+1)*(x+1)));
+    PetscScalar p = 1.329340388179*std::pow(v,PetscScalar(-0.375));
     return 1.0/(1.0/exp(x) + p);
   }
 #endif  
@@ -315,7 +315,7 @@ inline PetscScalar fermi_mhalf(PetscScalar x)
       return f/(1.0+f*(a+f*(-2.0*b+f*(3*c-4*d*f))));
     }
     else
-      return 2.0*x/(SQRTPI*pow((x*x+0.6),PetscScalar(0.25)));
+      return 2.0*x/(SQRTPI*std::pow((x*x+0.6),PetscScalar(0.25)));
   }
 #endif  
 }
@@ -341,8 +341,8 @@ inline PetscScalar fermi_mhalf_f(PetscScalar x)
     return x/(1.e0+x*(a+x*(-2.e0*b+x*(3.e0*c-4.e0*d*x))));
   else
   {
-    PetscScalar eta=sqrt(pow(0.75e0*SQRTPI*x,PetscScalar(4.e0/3.e0))-PI*PI/6.e0);
-    return 2.e0*eta/(SQRTPI*pow(eta*eta+0.6e0,PetscScalar(0.25e0)));
+    PetscScalar eta=sqrt(std::pow(0.75e0*SQRTPI*x,PetscScalar(4.e0/3.e0))-PI*PI/6.e0);
+    return 2.e0*eta/(SQRTPI*std::pow(eta*eta+0.6e0,PetscScalar(0.25e0)));
   }
 }
 
@@ -357,7 +357,7 @@ inline PetscScalar inv_fermi_half(PetscScalar x)
     return log(x) + x*(3.5355339059327379e-001 - x*(4.9500897298752622e-003
                        - x*(1.4838577128872821e-004 - x*4.4256301190009895e-006)));
   else
-    return sqrt(pow(0.75*SQRTPI*x,PetscScalar(4.0/3.0)) - PI*PI/6.0);
+    return sqrt(std::pow(0.75*SQRTPI*x,PetscScalar(4.0/3.0)) - PI*PI/6.0);
 }
 
 
@@ -372,7 +372,7 @@ inline  PetscScalar gamma_f(PetscScalar x)
   PetscScalar temx;
   if(x>1.0e1)
   {
-    temx=sqrt(pow(7.5e-1*pi1*x,PetscScalar(4.e0/3.e0))-pi2/6.e0);
+    temx=sqrt(std::pow(7.5e-1*pi1*x,PetscScalar(4.e0/3.e0))-pi2/6.e0);
     if(x > MaximumExponent) 
       return VerySmallNumericValue;
     else

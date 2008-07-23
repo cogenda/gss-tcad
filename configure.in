@@ -26,7 +26,7 @@ if test "$YACC" != "bison -y" ;  then
  AC_MSG_ERROR(ERROR: Can't find bison!)
 fi
 AC_PROG_MAKE_SET
-
+AC_CHECK_PROG(AR, ar, ar, :)
 
 CFLAGS=" -O1 "
 CXXFLAGS=" -O1 "

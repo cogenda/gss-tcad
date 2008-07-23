@@ -79,18 +79,15 @@ double  BSolver::set_refine_scale(Tri & tri, RefineDefine & ref)
     if(ref.Variable == Doping)
     {
       // the mesh size must small than Debye length.
-      PetscScalar doping = fabs(pzonedata->aux[p1].Nd - pzonedata->aux[p1].Na
-                               +pzonedata->aux[p2].Nd - pzonedata->aux[p2].Na
-	                       +pzonedata->aux[p3].Nd - pzonedata->aux[p3].Na)/3.0
-			   +1.0*pow(scale_unit.s_centimeter,-3);
+      PetscScalar doping = fabs(pzonedata->aux[p1].Net_doping()
+                               +pzonedata->aux[p2].Net_doping()
+	                       +pzonedata->aux[p3].Net_doping())/3.0
+			       +1.0*pow(scale_unit.s_centimeter,-3);
       PetscScalar  Ld = sqrt(pzonedata->aux[p1].eps*pzonedata->mt->kb*pzonedata->fs[p1].T/(pzonedata->mt->e*pzonedata->mt->e*doping));
 
-      M1 = Measure(pzonedata->aux[p1].Nd*pow(scale_unit.s_centimeter,3)-
-                   pzonedata->aux[p1].Na*pow(scale_unit.s_centimeter,3));
-      M2 = Measure(pzonedata->aux[p2].Nd*pow(scale_unit.s_centimeter,3)-
-                   pzonedata->aux[p2].Na*pow(scale_unit.s_centimeter,3));
-      M3 = Measure(pzonedata->aux[p3].Nd*pow(scale_unit.s_centimeter,3)-
-                   pzonedata->aux[p3].Na*pow(scale_unit.s_centimeter,3));
+      M1 = Measure(pzonedata->aux[p1].Net_doping()*pow(scale_unit.s_centimeter,3));
+      M2 = Measure(pzonedata->aux[p2].Net_doping()*pow(scale_unit.s_centimeter,3));
+      M3 = Measure(pzonedata->aux[p3].Net_doping()*pow(scale_unit.s_centimeter,3));
       M =  dmax(dmax(fabs(M1-M2),fabs(M2-M3)),fabs(M3-M1))+1e-6;
       if(M>ref.Dispersion)
         Scale = Ld*Ld/(2*tri.area) < ref.Dispersion/M ? Ld*Ld/(2*tri.area):ref.Dispersion/M;
@@ -130,7 +127,7 @@ int BSolver::refine(RefineDefine & ref)
 
   //do necessarily prepare for call triangulate
   in.numberofpoints = gnode.size();
-  in.numberofpointattributes = 6; //P, n, p, Nd, Na and mole_x
+  in.numberofpointattributes = 10; //P, n, p, Nd, Na, P, As, Sb, B and mole_x
 
   in.pointattributelist = (double *)malloc(in.numberofpoints * in.numberofpointattributes * sizeof(double));
   in.pointlist = (double *) malloc(in.numberofpoints * 2 * sizeof(double));
@@ -166,8 +163,14 @@ int BSolver::refine(RefineDefine & ref)
       *ppointattributelist++ = double(pzonedata->fs[n].P);
       *ppointattributelist++ = double(pzonedata->fs[n].n*pow(scale_unit.s_centimeter,3));
       *ppointattributelist++ = double(pzonedata->fs[n].p*pow(scale_unit.s_centimeter,3));
+      
       *ppointattributelist++ = double(pzonedata->aux[n].Nd*pow(scale_unit.s_centimeter,3));
       *ppointattributelist++ = double(pzonedata->aux[n].Na*pow(scale_unit.s_centimeter,3));
+      *ppointattributelist++ = double(pzonedata->aux[n].P*pow(scale_unit.s_centimeter,3));
+      *ppointattributelist++ = double(pzonedata->aux[n].As*pow(scale_unit.s_centimeter,3));
+      *ppointattributelist++ = double(pzonedata->aux[n].Sb*pow(scale_unit.s_centimeter,3));
+      *ppointattributelist++ = double(pzonedata->aux[n].B*pow(scale_unit.s_centimeter,3));
+      
       *ppointattributelist++ = double(pzonedata->aux[n].mole_x);
     }
     else if(zonedata[z]->material_type == Insulator)
@@ -301,10 +304,10 @@ int BSolver::refine(RefineDefine & ref)
   if(setup_bc())   return 1;
   if(build_zonedata())    return 1;
 
-  //re-arrange data
-  if(doping_func.size())
+  //re-arrange doping data
+  if(doping_func.size()) //if we have analytic function?
         setup_doping();
-  else
+  else // we have to use 
   {
     ppointattributelist = out.pointattributelist;
     for(int z=0;z<zone_num;z++)
@@ -314,8 +317,12 @@ int BSolver::refine(RefineDefine & ref)
       for(int i=0;i<zone[z].danode.size();i++)
       {
         int index = zone[z].danode[i].g_index;
-        pzonedata->aux[i].Nd = fabs((ppointattributelist[6*index+3]))/pow(scale_unit.s_centimeter,3);
-        pzonedata->aux[i].Na = fabs((ppointattributelist[6*index+4]))/pow(scale_unit.s_centimeter,3);
+        pzonedata->aux[i].Nd = fabs((ppointattributelist[10*index+3]))/pow(scale_unit.s_centimeter,3);
+        pzonedata->aux[i].Na = fabs((ppointattributelist[10*index+4]))/pow(scale_unit.s_centimeter,3);
+	pzonedata->aux[i].P  = fabs((ppointattributelist[10*index+5]))/pow(scale_unit.s_centimeter,3);
+        pzonedata->aux[i].As = fabs((ppointattributelist[10*index+6]))/pow(scale_unit.s_centimeter,3);
+	pzonedata->aux[i].Sb = fabs((ppointattributelist[10*index+7]))/pow(scale_unit.s_centimeter,3);
+        pzonedata->aux[i].B  = fabs((ppointattributelist[10*index+8]))/pow(scale_unit.s_centimeter,3);
       }
     }
   }
@@ -328,39 +335,13 @@ int BSolver::refine(RefineDefine & ref)
       for(int i=0;i<zone[z].danode.size();i++)
       {
         int index = zone[z].danode[i].g_index;
-        pzonedata->aux[i].mole_x = fabs(ppointattributelist[6*index+5]);
+        pzonedata->aux[i].mole_x = fabs(ppointattributelist[10*index+9]);
         if(pzonedata->aux[i].mole_x > 1.0) pzonedata->aux[i].mole_x = 1.0;
       }
     }
+  
   setup_init_data();
-/*
-  //The re-computing of physical values on new mesh even make things worse.
-  //just use initial value.
-  for(int z=0;z<zone_num;z++)
-  {
-    if(zonedata[z]->material_type == Semiconductor)
-    {
-      SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[z]);
-      for(int i=0;i<zone[z].danode.size();i++)
-      {
-        int index = zone[z].danode[i].g_index;
-        pzonedata->fs[i].P = ppointattributelist[6*index+0];
-        pzonedata->fs[i].n = fabs((ppointattributelist[6*index+1]))/pow(scale_unit.s_centimeter,3)+1e-12;
-        pzonedata->fs[i].p = fabs((ppointattributelist[6*index+2]))/pow(scale_unit.s_centimeter,3)+1e-12;
-        //printf("%e %e %e\n",pzonedata->fs[i].P,pzonedata->fs[i].n,pzonedata->fs[i].p);
-      }
-    }
-    else if(zonedata[z]->material_type == Insulator)
-    {
-      ISZone *pzonedata = dynamic_cast< ISZone * >(zonedata[z]);
-      for(int i=0;i<zone[z].danode.size();i++)
-      {
-        int index = zone[z].danode[i].g_index;
-        pzonedata->fs[i].P = fabs((ppointattributelist[6*index+0]));
-      }
-    }
-  }
-*/
+
   // Free all allocated arrays, including those allocated by Triangle.
 
   free(in.pointlist);

@@ -522,14 +522,14 @@ int  SMCZone::Init(ZONE* zone, double Tl,PhysicalUnitScale *scale)
     mt->mapping(&pzone->danode[i],&aux[i],0);
     double nie = mt->band->nie(fs[i].T);
     double Nc  = mt->band->Nc(fs[i].T);
-    if((aux[i].Nd-aux[i].Na)>0)   //n-type
+    if( aux[i].Net_doping() > 0 )   //n-type
     {
-      fs[i].n=((aux[i].Nd-aux[i].Na)+sqrt(pow(aux[i].Nd-aux[i].Na,2)+4*nie*nie))/2;
+      fs[i].n=(aux[i].Net_doping()+sqrt(pow(aux[i].Net_doping(),2)+4*nie*nie))/2;
       fs[i].p=nie*nie/fs[i].n;
     }
     else                       //p-type
     {
-      fs[i].p=((aux[i].Na-aux[i].Nd)+sqrt(pow(aux[i].Na-aux[i].Nd,2)+4*nie*nie))/2;
+      fs[i].p=(-aux[i].Net_doping()+sqrt(pow(-aux[i].Net_doping(),2)+4*nie*nie))/2;
       fs[i].n=nie*nie/fs[i].p;
     }
     aux[i].affinity = mt->basic->Affinity(fs[i].T);
@@ -539,7 +539,7 @@ int  SMCZone::Init(ZONE* zone, double Tl,PhysicalUnitScale *scale)
     aux[i].Eg     =   mt->band->Eg(fs[i].T)-mt->band->EgNarrow(fs[i].T);
     aux[i].Nc     =   mt->band->Nc(fs[i].T);
     aux[i].Nv     =   mt->band->Nv(fs[i].T);
-    fs[i].P       =   kb*fs[i].T/e*asinh((aux[i].Nd-aux[i].Na)/(2*nie)) - kb*fs[i].T/e*log(Nc/nie)
+    fs[i].P       =   kb*fs[i].T/e*asinh(aux[i].Net_doping()/(2*nie)) - kb*fs[i].T/e*log(Nc/nie)
                       - aux[i].affinity - mt->band->EgNarrowToEc(fs[i].T);
     fs[i].Eqc = -(e*fs[i].P + aux[i].affinity + mt->band->EgNarrowToEc(fs[i].T) + kb*fs[i].T*log(aux[i].Nc));
     fs[i].Eqv = -(e*fs[i].P + aux[i].affinity - mt->band->EgNarrowToEv(fs[i].T) - kb*fs[i].T*log(aux[i].Nv)+ aux[i].Eg);

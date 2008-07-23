@@ -6,7 +6,7 @@ include ../../../make.defs
 all: dumptif$(EXE)
 
 dumptif$(EXE): main.o tocgns.o  tif_parser.o tif_lex.o
-	$(LINK) -O -o dumptif$(EXE)   main.o tocgns.o tif_lex.o tif_parser.o ${PETSC_LIB} $(CLIBS)
+	$(LINK) -O -o dumptif$(EXE)   main.o tocgns.o tif_lex.o tif_parser.o ${PETSC_LIB} $(CGNSLIB)
 
 tif_parser.o : tif_parser.cc
 tif_lex.o    : tif_lex.cc
