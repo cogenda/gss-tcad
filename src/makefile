@@ -16,7 +16,8 @@ OBJ =  main.o  initial.o data_init.o data_io.o probe.o source.o doping.o  bc.o  
        mix2.o semiequ2mix.o insulequ2mix.o\
        ebm_nt3e.o semiequ3e.o insulequ3.o elecequ3.o\
        qddm_nt1e.o semiequ1q.o insulequ1q.o elecequ1q.o\
-       em_fem.o
+       em_fem.o\
+       
 
 
 all:    objs main.o

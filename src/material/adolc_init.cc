@@ -1,4 +1,5 @@
 #include "adolc.h"
+
 unsigned int adtl::AutoDScalar::numdir = 9;
 
 extern "C"

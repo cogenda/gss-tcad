@@ -451,6 +451,8 @@ public:
 public:
   int           import_doping(char *, PhysicalUnitScale *);
   int           export_doping(char *, PhysicalUnitScale *);
+  int           export_accptor_ascii(char *, PhysicalUnitScale *);
+  int           export_donor_ascii(char *, PhysicalUnitScale *);
   int           import_mole(char *,int);
   int           export_mole(char *,int);
   int           import_solution(char *, char *, DABC &, PhysicalUnitScale *);

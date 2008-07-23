@@ -35,8 +35,8 @@ void SMCZone::F2E_mix_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_
   int size = pzone->davcell.size();
   PetscScalar e  =  mt->e;
   PetscScalar kb = mt->kb;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar Vi = x[zofs[z]+4*i+0];     //potential of node i
   PetscScalar ni = x[zofs[z]+4*i+1];     //electron density of node i
   PetscScalar pi = x[zofs[z]+4*i+2];     //hole density of node i
@@ -126,8 +126,8 @@ void SMCZone::F2E_mix_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, OD
   int size = pzone->davcell.size();
   PetscScalar e  =  mt->e;
   PetscScalar kb = mt->kb;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar Vi = x[zofs[z]+4*i+0];     //potential of node i
   PetscScalar ni = x[zofs[z]+4*i+1];     //electron density of node i
   PetscScalar pi = x[zofs[z]+4*i+2];     //hole density of node i
@@ -388,7 +388,7 @@ void SMCZone::F2E_mix_ddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, OD
   }
 
   f[zofs[zone_index]+4*i+0] = (f[zofs[zone_index]+4*i+0]+grad_P)/pcell->area
-                              + e/aux[i].eps*((pi-aux[i].Na)+(aux[i].Nd-ni));
+                              + e/aux[i].eps*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+4*i+1] = f[zofs[zone_index]+4*i+1]/pcell->area;
   f[zofs[zone_index]+4*i+2] = f[zofs[zone_index]+4*i+2]/pcell->area;
   f[zofs[zone_index]+4*i+3] = (f[zofs[zone_index]+4*i+3]+grad_T)/pcell->area;

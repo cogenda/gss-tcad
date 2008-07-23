@@ -82,9 +82,15 @@ const int ValenceBand    = 710;
 const int ConductionBand = 711;
 const int QuantumEc      = 712;
 const int QuantumEv      = 713;
+
 const int Doping      = 720;
 const int DopingNa    = 721;
 const int DopingNd    = 722;
+const int NetDoping   = 723;
+const int Phosphorus  = 724;
+const int Arsenic     = 725;
+const int Antimony    = 726;
+const int Boron       = 727;
 
 const int Temperature = 730;
 const int ElecTemp    = 731;
@@ -235,9 +241,13 @@ typedef struct
   bool    core;
   bool    ascii;
   bool    vtk;
+  bool    acceptor;
+  bool    donor;
   char    CoreFile[32];
   char    AscFile[32];
   char    VTKFile[32];
+  char    AcceptorFile[32];
+  char    DonorFile[32];
 }
 ExportDefine;
 

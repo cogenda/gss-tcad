@@ -24,7 +24,7 @@ contact  Type = OhmicContact       ID=NDrain  Res=100 Cap=0 Ind=0
 
 #------------------------------------------------------------------------------
 # specify physical model.
-PMIS region=Si mobility=Lucent
+PMIS region=NSilicon mobility=Lucent
 
 #------------------------------------------------------------------------------
 # drive command, specify the solving process.

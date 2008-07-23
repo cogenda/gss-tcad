@@ -23,7 +23,6 @@
 #include "log.h"
 #include "ctrl.h"
 
-
 int main(int argc, char ** args)
 {
   PetscInitialize(&argc,&args,PETSC_NULL,PETSC_NULL);
@@ -43,9 +42,9 @@ int main(int argc, char ** args)
   cout<<"*       A Two-Dimensional General-purpose Semiconductor Simulator.         *"<<endl;
   cout<<"*                                                                          *"<<endl;
   if(sizeof(PetscScalar)==sizeof(double))
-  cout<<"* This is GSS version 0.46.08 with double precision.                       *"<<endl;
+  cout<<"* This is GSS version 0.46.10 with double precision.                       *"<<endl;
   if(sizeof(PetscScalar)==sizeof(long double))
-  cout<<"* This is GSS version 0.46.08 with long double precision.                  *"<<endl;
+  cout<<"* This is GSS version 0.46.10 with long double precision.                  *"<<endl;
   cout<<"* Copyright (C) 2005-2008 by Gong Ding and Zhang XiangHua.                 *"<<endl;
   cout<<"* Please send ANY comments, corrections or suggestions to gdiso@ustc.edu.  *"<<endl;
   cout<<"****************************************************************************"<<endl<<endl;

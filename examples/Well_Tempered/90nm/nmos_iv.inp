@@ -23,20 +23,20 @@ boundary Type = InsulatorInterface  ID = IF_Oxide0_to_Si3 QF=0
 
 #------------------------------------------------------------------------------
 # specify physical model, use Lucent mobility here.
-PMIS region=Si3 mobility=Lombardi
+PMIS region=Si3 mobility=Lucent
 
 #------------------------------------------------------------------------------
 # drive command, specify the solving process.
-# set gate voltage to 3V
+# set vcc to 0.21V
 IMPORT   CoreFile=NMOS.init.cgns
 ATTACH   Electrode=drain5             VApp=VCC
 METHOD   Type = DDML1E   Scheme = Newton  NS=Basic LS=LU
 SOLVE    Type=STEADYSTATE
 EXPORT   CoreFile=t1.cgns
-METHOD   Type = EBML3E   Scheme = Newton  NS=Basic LS=LU Damping=Potential #toler.relax=1e8
+METHOD   Type = EBML3E   Scheme = Newton  NS=Basic LS=GMRES  Damping=Potential toler.relax=1e6
 SOLVE    Type=DCSWEEP VScan=Polysili1  IVRecord=Polysili1 \
          IVRecord=drain5 \
-         IVFile=iv1n.txt VStart=0 VStep=0.01 VStop=0.6
+         IVFile=iv.txt VStart=0.01 VStep=0.01 VStop=0.6
 
 #PLOT     Variable=Temperature Resolution=RES.High    AzAngle=40  ElAngle=40
 #PLOT     Variable=Potential   Resolution=RES.High    AzAngle=40  ElAngle=40

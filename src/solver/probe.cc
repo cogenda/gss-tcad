@@ -85,9 +85,14 @@ int BSolver::probe(int solver_type, PetscScalar  x)
     }
     //record data for semiconductor zone only
     if( probe_define[i].Variable==Doping         ||
+        probe_define[i].Variable==NetDoping      ||
         probe_define[i].Variable==DopingNd       ||
         probe_define[i].Variable==DopingNa       ||
-        probe_define[i].Variable==ElecDensity    ||
+        probe_define[i].Variable==Phosphorus     ||
+        probe_define[i].Variable==Arsenic        ||
+        probe_define[i].Variable==Antimony       ||
+        probe_define[i].Variable==Boron          ||
+	probe_define[i].Variable==ElecDensity    ||
         probe_define[i].Variable==HoleDensity    ||
         probe_define[i].Variable==ElecTemp       ||
         probe_define[i].Variable==HoleTemp       ||
@@ -109,12 +114,22 @@ int BSolver::probe(int solver_type, PetscScalar  x)
           switch(probe_define[i].Variable)
           {
           case DopingNd:
-            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].Nd*pow(scale_unit.s_centimeter,3)));break;
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].Total_Nd()*pow(scale_unit.s_centimeter,3)));break;
           case DopingNa:
-            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].Na*pow(scale_unit.s_centimeter,3)));break;
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].Total_Na()*pow(scale_unit.s_centimeter,3)));break;
           case Doping:
-            fprintf(probe_define[i].pFile,"%e\t",double((pzonedata->aux[node].Nd-pzonedata->aux[node].Na)*pow(scale_unit.s_centimeter,3)));break;
-          case ElecDensity:
+            fprintf(probe_define[i].pFile,"%e\t",double((pzonedata->aux[node].Total_doping())*pow(scale_unit.s_centimeter,3)));break;
+          case NetDoping:
+            fprintf(probe_define[i].pFile,"%e\t",double((pzonedata->aux[node].Net_doping())*pow(scale_unit.s_centimeter,3)));break;
+	  case Phosphorus:
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].P*pow(scale_unit.s_centimeter,3)));break;
+          case Arsenic:
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].As*pow(scale_unit.s_centimeter,3)));break;
+	  case Antimony:
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].Sb*pow(scale_unit.s_centimeter,3)));break;
+          case Boron:
+            fprintf(probe_define[i].pFile,"%e\t",double(pzonedata->aux[node].B*pow(scale_unit.s_centimeter,3)));break;
+	  case ElecDensity:
             fprintf(probe_define[i].pFile,"%e\t",double(fabs(pzonedata->fs[node].n)*pow(scale_unit.s_centimeter,3)));break;
           case HoleDensity:
             fprintf(probe_define[i].pFile,"%e\t",double(fabs(pzonedata->fs[node].p)*pow(scale_unit.s_centimeter,3)));break;

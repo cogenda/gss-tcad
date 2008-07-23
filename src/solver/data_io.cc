@@ -37,39 +37,57 @@ inline int cgns_error_handle(const char *s,int fn)
 
 int SMCZone::import_doping(char *cgnsfile,PhysicalUnitScale *scale)
 {
-  int  Z = zone_index+1,fn,B=1;
+  int  Z = zone_index+1,fn,BS=1,nfields;
   int  isize[3],nsol;
   char zonelabel[32],solname[32];
   GridLocation_t location;
 
   int node_num = pzone->davcell.size();
 
-  double *Na,*Nd;
+  double *Na, *Nd, *P, *As, *Sb, *B;
   Na = new double[node_num];
   Nd = new double[node_num];
+  P  = new double[node_num];
+  As = new double[node_num];
+  Sb = new double[node_num];
+  B  = new double[node_num];
 
   cg_open(cgnsfile,MODE_READ,&fn);
-  cg_zone_read(fn,B,Z,zonelabel,isize);
+  cg_zone_read(fn,BS,Z,zonelabel,isize);
 
   gss_log.string_buf()<<"read Doping of Region "<<pzone->zonename<<"... ";
   //---------------------------------------------------------------------------------------
   //how many fieldsol node?
-  assert(!cg_nsols(fn,B,Z,&nsol));
+  assert(!cg_nsols(fn,BS,Z,&nsol));
   if(nsol == 0)
     return cgns_error_handle("no fieldsol node,not a supported cgns file\n",fn);
   //search for the "doping" FlowSolution_t
   int flag = 0;
   for(int i=1;i<=nsol;i++)
   {
-    assert(!cg_sol_info(fn,B,Z,i,solname,&location));
+    assert(!cg_sol_info(fn,BS,Z,i,solname,&location));
     if(!strcmp(solname,"Doping"))
     {
-      int imin = 1;
-      flag = 1;
+      flag = 1;//we found doping information
+      int imin=1;
+
+      cg_nfields(fn, BS, Z, i, &nfields);
+      if(nfields <= 2)
+      {
+        assert(!cg_field_read(fn,BS,Z,i,"Nd",RealDouble,&imin,&isize[0],Nd));
+        assert(!cg_field_read(fn,BS,Z,i,"Na",RealDouble,&imin,&isize[0],Na));
+      }
+      if(nfields == 6)
+      {
+        assert(!cg_field_read(fn,BS,Z,i,"Nd",RealDouble,&imin,&isize[0],Nd));
+        assert(!cg_field_read(fn,BS,Z,i,"Na",RealDouble,&imin,&isize[0],Na));
+	assert(!cg_field_read(fn,BS,Z,i,"P" ,RealDouble,&imin,&isize[0],P ));
+        assert(!cg_field_read(fn,BS,Z,i,"As",RealDouble,&imin,&isize[0],As));
+        assert(!cg_field_read(fn,BS,Z,i,"Sb",RealDouble,&imin,&isize[0],Sb));
+        assert(!cg_field_read(fn,BS,Z,i,"B" ,RealDouble,&imin,&isize[0],B ));
+      }
       gss_log.string_buf()<<"done\n";
       gss_log.record();
-      assert(!cg_field_read(fn,B,Z,i,"Nd",RealDouble,&imin,&isize[0],Nd));
-      assert(!cg_field_read(fn,B,Z,i,"Na",RealDouble,&imin,&isize[0],Na));
     }
   }
 
@@ -78,14 +96,33 @@ int SMCZone::import_doping(char *cgnsfile,PhysicalUnitScale *scale)
   else
     cg_close(fn);
 
-  for(int i=0;i<node_num;i++)
-  {     //also,doping will be scaled. nagtive value convert to positive
-    aux[i].Nd = fabs(Nd[i])/pow(scale->s_centimeter,3);
-    aux[i].Na = fabs(Na[i])/pow(scale->s_centimeter,3);
+  if(nfields <= 2)
+  {
+    for(int i=0;i<node_num;i++)
+    {     //also,doping will be scaled. nagtive value convert to positive
+      aux[i].Nd = fabs(Nd[i])/pow(scale->s_centimeter,3);
+      aux[i].Na = fabs(Na[i])/pow(scale->s_centimeter,3);
+    }
   }
-
+  if(nfields == 6)
+  {
+    for(int i=0;i<node_num;i++)
+    {     //also,doping will be scaled. nagtive value convert to positive
+      aux[i].Nd = fabs(Nd[i])/pow(scale->s_centimeter,3);
+      aux[i].Na = fabs(Na[i])/pow(scale->s_centimeter,3);
+      aux[i].P  = fabs(P[i])/pow(scale->s_centimeter,3);
+      aux[i].As = fabs(As[i])/pow(scale->s_centimeter,3);
+      aux[i].Sb = fabs(Sb[i])/pow(scale->s_centimeter,3);
+      aux[i].B  = fabs(B[i])/pow(scale->s_centimeter,3);
+    }
+  }
+  
   delete [] Na;
   delete [] Nd;
+  delete [] P ;
+  delete [] As;
+  delete [] Sb;
+  delete [] B ;
   return 0;
 
 }
@@ -93,54 +130,101 @@ int SMCZone::import_doping(char *cgnsfile,PhysicalUnitScale *scale)
 
 int SMCZone::export_doping(char *cgnsfile,PhysicalUnitScale *scale)
 {
-  int  Z = zone_index+1,fn,B=1,SOL,F;
+  int  Z = zone_index+1,fn,BS=1,SOL,F;
   int  isize[3],nsol;
   char zonelabel[32],solname[32];
   GridLocation_t location;
 
   int node_num = pzone->davcell.size();
 
-  double *Na,*Nd;
+  double *Na, *Nd, *P, *As, *Sb, *B;
   Na = new double[node_num];
   Nd = new double[node_num];
+  P  = new double[node_num];
+  As = new double[node_num];
+  Sb = new double[node_num];
+  B  = new double[node_num];
 
   for(int i=0;i<node_num;i++)
   {
     Nd[i] = double(aux[i].Nd*pow(scale->s_centimeter,3));
     Na[i] = double(aux[i].Na*pow(scale->s_centimeter,3));
+    P[i]  = double(aux[i].P *pow(scale->s_centimeter,3));
+    As[i] = double(aux[i].As*pow(scale->s_centimeter,3));
+    Sb[i] = double(aux[i].Sb*pow(scale->s_centimeter,3));
+    B[i]  = double(aux[i].B *pow(scale->s_centimeter,3));
   }
 
   cg_open(cgnsfile,MODE_MODIFY,&fn);
-  cg_zone_read(fn,B,Z,zonelabel,isize);
+  cg_zone_read(fn,BS,Z,zonelabel,isize);
 
   //---------------------------------------------------------------------------------------
   //search for FlowSolution_t if the "Doping" is exit
-  assert(!cg_nsols(fn,B,Z,&nsol));
+  assert(!cg_nsols(fn,BS,Z,&nsol));
   for(int i=1;i<=nsol;i++)
   {
-    assert(!cg_sol_info(fn,B,Z,i,solname,&location));
+    assert(!cg_sol_info(fn,BS,Z,i,solname,&location));
     if(!strcmp(solname,"Doping"))
     {
       gss_log.string_buf()<<"waring !!! doping exit,delete it.\n";
       gss_log.record();
-      assert(!cg_goto(fn,B,"Zone_t",Z,"end"));
+      assert(!cg_goto(fn,BS,"Zone_t",Z,"end"));
       assert(!cg_delete_node("Doping"));
     }
   }
 
   //write field solution
 
-  assert(!cg_sol_write(fn,B,Z,"Doping",Vertex,&SOL));
-  assert(!cg_field_write(fn,B,Z,SOL,RealDouble,"Na",Na,&F));
-  assert(!cg_field_write(fn,B,Z,SOL,RealDouble,"Nd",Nd,&F));
+  assert(!cg_sol_write(fn,BS,Z,"Doping",Vertex,&SOL));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"Na",Na,&F));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"Nd",Nd,&F));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"P", P, &F));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"As",As,&F));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"Sb",Sb,&F));
+  assert(!cg_field_write(fn,BS,Z,SOL,RealDouble,"B", B, &F));
 
   cg_close(fn);
 
   delete [] Na;
   delete [] Nd;
+  delete [] P ;
+  delete [] As;
+  delete [] Sb;
+  delete [] B ;
   return 0;
 
 }
+
+
+int SMCZone::export_accptor_ascii(char *dopingfile,PhysicalUnitScale *scale)
+{
+  FILE *fp=fopen(dopingfile,"a");//opne in append model, for multi-region
+  if (fp == NULL) return 1;
+  for(int i=0;i<node_num;i++)
+  {
+    double x = pzone->danode[i].x/scale->s_micron;
+    double y = pzone->danode[i].y/scale->s_micron;
+    fprintf(fp,"%e %e %e\n",x,y,double((aux[i].Na+ aux[i].B) *pow(scale->s_centimeter,3)));
+  }
+  fclose(fp);
+  return 0;
+}
+
+
+int SMCZone::export_donor_ascii(char *dopingfile,PhysicalUnitScale *scale)
+{
+  FILE *fp=fopen(dopingfile,"a");//opne in append model, for multi-region
+  if (fp == NULL) return 1;
+  for(int i=0;i<node_num;i++)
+  {
+    double x = pzone->danode[i].x/scale->s_micron;
+    double y = pzone->danode[i].y/scale->s_micron;
+    fprintf(fp,"%e %e %e\n",x,y,double((aux[i].Nd+aux[i].P+aux[i].As+aux[i].Sb)*pow(scale->s_centimeter,3)));
+  }
+  fclose(fp);
+  return 0;
+}
+
 
 int SMCZone::import_mole(char *cgnsfile,int comp)
 {
@@ -317,18 +401,18 @@ int SMCZone::export_solution(char *cgnsfile,char *solname, DABC &bc, PhysicalUni
   assert(!cg_nbocos(fn,B,Z,&BCNum));
   for(int BCIndex=1;BCIndex<=BCNum;BCIndex++)
   {
-      assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
-            &normalindex,&normallistflag,&normaldatatype,&ndataset));
-      int bc_index=bc.Get_bc_index(zone_index,boconame);
-      if(bc.is_electrode(bc_index))
-      {
-        double potential=bc.Get_pointer(bc_index)->Get_Potential();
-        int    DimensionVector=1;
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "end");
-        cg_user_data_write ("Extra_data_for_electrode");
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
-        cg_array_write("electrode_potential", RealDouble, 1, &DimensionVector, &potential);
-      }
+    assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
+                         &normalindex,&normallistflag,&normaldatatype,&ndataset));
+    int bc_index=bc.Get_bc_index(zone_index,boconame);
+    if(bc.is_electrode(bc_index))
+    {
+      double potential=bc.Get_pointer(bc_index)->Get_Potential();
+      int    DimensionVector=1;
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "end");
+      cg_user_data_write ("Extra_data_for_electrode");
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
+      cg_array_write("electrode_potential", RealDouble, 1, &DimensionVector, &potential);
+    }
   }
 
   cg_close(fn);
@@ -445,18 +529,18 @@ int ISZone::export_solution(char *cgnsfile,char *solname,DABC &bc,PhysicalUnitSc
   assert(!cg_nbocos(fn,B,Z,&BCNum));
   for(int BCIndex=1;BCIndex<=BCNum;BCIndex++)
   {
-      assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
-            &normalindex,&normallistflag,&normaldatatype,&ndataset));
-      int bc_index=bc.Get_bc_index(zone_index,boconame);
-      if(bc.is_electrode(bc_index))
-      {
-        double potential=bc.Get_pointer(bc_index)->Get_Potential();
-        int    DimensionVector=1;
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "end");
-        cg_user_data_write ("Extra_data_for_electrode");
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
-        cg_array_write("electrode_potential", RealDouble, 1, &DimensionVector, &potential);
-      }
+    assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
+                         &normalindex,&normallistflag,&normaldatatype,&ndataset));
+    int bc_index=bc.Get_bc_index(zone_index,boconame);
+    if(bc.is_electrode(bc_index))
+    {
+      double potential=bc.Get_pointer(bc_index)->Get_Potential();
+      int    DimensionVector=1;
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "end");
+      cg_user_data_write ("Extra_data_for_electrode");
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
+      cg_array_write("electrode_potential", RealDouble, 1, &DimensionVector, &potential);
+    }
   }
 
   cg_close(fn);
@@ -480,9 +564,9 @@ int SMCZone::import_solution(char *cgnsfile,char *solname,DABC &bc,PhysicalUnitS
   BCType_t       bocotype;
   int narrays=0;
 
-        char ArrayName[32]="";
-        DataType_t DataType=RealDouble;
-        int  DataDimension=1,DimensionVector=1;
+  char ArrayName[32]="";
+  DataType_t DataType=RealDouble;
+  int  DataDimension=1,DimensionVector=1;
   int nfields;
   int node_num = pzone->davcell.size();
 
@@ -525,13 +609,13 @@ int SMCZone::import_solution(char *cgnsfile,char *solname,DABC &bc,PhysicalUnitS
       assert(!cg_field_read(fn,B,Z,i,"lattice_temperature",RealDouble,&imin,&isize[0],T));
       if(nfields>4)
       {
-       assert(!cg_field_read(fn,B,Z,i,"elec_temperature",RealDouble,&imin,&isize[0],Tn));
-       assert(!cg_field_read(fn,B,Z,i,"hole_temperature",RealDouble,&imin,&isize[0],Tp));
+        assert(!cg_field_read(fn,B,Z,i,"elec_temperature",RealDouble,&imin,&isize[0],Tn));
+        assert(!cg_field_read(fn,B,Z,i,"hole_temperature",RealDouble,&imin,&isize[0],Tp));
       }
       if(nfields>6)
       {
-       assert(!cg_field_read(fn,B,Z,i,"elec_quantum_potential",RealDouble,&imin,&isize[0],Eqc));
-       assert(!cg_field_read(fn,B,Z,i,"hole_quantum_potential",RealDouble,&imin,&isize[0],Eqv));
+        assert(!cg_field_read(fn,B,Z,i,"elec_quantum_potential",RealDouble,&imin,&isize[0],Eqc));
+        assert(!cg_field_read(fn,B,Z,i,"hole_quantum_potential",RealDouble,&imin,&isize[0],Eqv));
       }
     }
   }
@@ -575,16 +659,16 @@ int SMCZone::import_solution(char *cgnsfile,char *solname,DABC &bc,PhysicalUnitS
   assert(!cg_nbocos(fn,B,Z,&BCNum));
   for(int BCIndex=1;BCIndex<=BCNum;BCIndex++)
   {
-      assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
-            &normalindex,&normallistflag,&normaldatatype,&ndataset));
-      int bc_index=bc.Get_bc_index(zone_index,boconame);
-      if(bc.is_electrode(bc_index))
-      {
-        double potential=0;
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
-        assert(!cg_array_read_as(1,RealDouble, &potential));
-        bc.Get_pointer(bc_index)->Set_Potential(potential);
-      }
+    assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
+                         &normalindex,&normallistflag,&normaldatatype,&ndataset));
+    int bc_index=bc.Get_bc_index(zone_index,boconame);
+    if(bc.is_electrode(bc_index))
+    {
+      double potential=0;
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
+      assert(!cg_array_read_as(1,RealDouble, &potential));
+      bc.Get_pointer(bc_index)->Set_Potential(potential);
+    }
   }
 
   if(flag == 0 )
@@ -650,16 +734,16 @@ int ISZone::import_solution(char *cgnsfile,char *solname,DABC &bc,PhysicalUnitSc
   assert(!cg_nbocos(fn,B,Z,&BCNum));
   for(int BCIndex=1;BCIndex<=BCNum;BCIndex++)
   {
-      assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
-            &normalindex,&normallistflag,&normaldatatype,&ndataset));
-      int bc_index=bc.Get_bc_index(zone_index,boconame);
-      if(bc.is_electrode(bc_index))
-      {
-        double potential=0;
-        cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
-        assert(!cg_array_read_as(1,RealDouble, &potential));
-        bc.Get_pointer(bc_index)->Set_Potential(potential);
-      }
+    assert(!cg_boco_info(fn,B,Z,BCIndex,boconame,&bocotype,&ptset,&npnts,
+                         &normalindex,&normallistflag,&normaldatatype,&ndataset));
+    int bc_index=bc.Get_bc_index(zone_index,boconame);
+    if(bc.is_electrode(bc_index))
+    {
+      double potential=0;
+      cg_goto(fn, B, "Zone_t", Z, "ZoneBC_t", 1, "BC_t", BCIndex, "UserDefinedData_t", 1, "end");
+      assert(!cg_array_read_as(1,RealDouble, &potential));
+      bc.Get_pointer(bc_index)->Set_Potential(potential);
+    }
   }
 
   if(flag == 0 )
@@ -849,8 +933,8 @@ int BSolver::extract_ascii(char *filename)
       fprintf(fp,"n %d %s %e %e %e %e %e %e %e %e\n",
               i+1,
               zone[z].zonelabel,
-              double(pzonedata->aux[j].Nd*pow(scale_unit.s_centimeter,3)),
-              double(pzonedata->aux[j].Na*pow(scale_unit.s_centimeter,3)),
+              double(pzonedata->aux[j].Total_Nd()*pow(scale_unit.s_centimeter,3)),
+              double(pzonedata->aux[j].Total_Na()*pow(scale_unit.s_centimeter,3)),
               double(pzonedata->fs[j].n*pow(scale_unit.s_centimeter,3)),
               double(pzonedata->fs[j].p*pow(scale_unit.s_centimeter,3)),
               double(pzonedata->fs[j].P/scale_unit.s_volt),

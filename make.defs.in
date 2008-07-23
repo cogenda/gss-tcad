@@ -6,7 +6,7 @@ GSS_DIR  = @GSS_DIR@
 CC       = @CC@
 CXX      = @CXX@
 LINK     = @CXX@
-
+AR       = @AR@
 
 CFLAGS   = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
@@ -33,7 +33,11 @@ HAVE_X11 = @HAVE_X11@
 X11INCS = @X11INCS@
 X11LIBS = @X11LIBS@
 
-INCLUDE   =  -I$(GSS_DIR) -I$(GSS_DIR)/src/include  $(CGNSINC) $(X11INCS) $(CPPFLAGS)
-CLIBS     =  @LIBS@ $(LEXLIB) $(CGNSLIB) $(X11LIBS) $(LDFLAGS)
+#CSA library
+CSAINC = -I$(GSS_DIR)/src/utils/csa
+CSALIB = -L$(GSS_DIR)/src/utils/csa/ -lcsa
+
+INCLUDE   =  -I$(GSS_DIR) -I$(GSS_DIR)/src/include  $(CGNSINC) $(X11INCS) $(CSAINC) $(CPPFLAGS)
+CLIBS     =  @LIBS@ $(LEXLIB) $(CGNSLIB) $(X11LIBS) $(CSALIB) $(LDFLAGS)
 
 

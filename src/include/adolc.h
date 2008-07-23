@@ -4,7 +4,7 @@
  
  ADOL-C -- Automatic Differentiation by Overloading in C++
  File:     adouble.h
- Revision: $Id: adolc.h,v 1.1.1.1 2008/03/05 09:30:37 gdiso Exp $
+ Revision: $Id: adolc.h,v 1.3 2008/05/27 03:02:39 gdiso Exp $
  Contents: adouble.h contains the basis for the class of adouble
            included here are all the possible functions defined on
            the adouble class.  Notice that, as opposed to ealier versions,
@@ -51,11 +51,20 @@
 #include <cmath>
 #include "petsc.h"
 
-using namespace std;
-#define ATRIG_ERF
 
-//the max number of independent variable may be used by GSS
+// the max number of independent variable may be used by GSS
+// for EBM solver on Triangle element, there are 6*3=18 independent variables
+// this is not a flexible method, 
+// However, using std::vector instead of fxied length array makes system performance greatly slow done. 
 #define NUMBER_DIRECTIONS 18
+
+extern "C"
+{
+  /**
+   * function for set the static adtl::AutoDScalar::numdir
+   */
+  void  set_ad_number(const unsigned int p);
+}
 
 
 namespace adtl {
@@ -143,11 +152,11 @@ public:
     inline friend const AutoDScalar sinh (const AutoDScalar &a);
     inline friend const AutoDScalar cosh (const AutoDScalar &a);
     inline friend const AutoDScalar tanh (const AutoDScalar &a);
-#if defined(ATRIG_ERF)
+
     inline friend const AutoDScalar asinh (const AutoDScalar &a);
     inline friend const AutoDScalar acosh (const AutoDScalar &a);
     inline friend const AutoDScalar atanh (const AutoDScalar &a);
-#endif
+
     inline friend const AutoDScalar fabs (const AutoDScalar &a);
     inline friend const AutoDScalar ceil (const AutoDScalar &a);
     inline friend const AutoDScalar floor (const AutoDScalar &a);
@@ -160,10 +169,10 @@ public:
     inline friend const AutoDScalar ldexp (const AutoDScalar &a, const AutoDScalar &b);
     inline friend const AutoDScalar ldexp (const AutoDScalar &a, const PetscScalar v);
     inline friend const AutoDScalar ldexp (const PetscScalar v, const AutoDScalar &a);
-    inline friend         PetscScalar frexp (const AutoDScalar &a, int* v);
-#if defined(ATRIG_ERF)
+    inline friend       PetscScalar frexp (const AutoDScalar &a, int* v);
+
     inline friend const AutoDScalar erf (const AutoDScalar &a);
-#endif
+
 
 
     /*******************  nontemporary results  ***************************/
@@ -226,8 +235,8 @@ public:
 #endif
 
     /*******************  i/o operations  *********************************/
-    inline friend ostream& operator << ( ostream&, const AutoDScalar& );
-    inline friend istream& operator >> ( istream&, AutoDScalar& );
+    inline friend std::ostream& operator << ( std::ostream&, const AutoDScalar& );
+    inline friend std::istream& operator >> ( std::istream&, AutoDScalar& );
 
     static unsigned int numdir;
     static void setNumDir(const unsigned int p)
@@ -559,7 +568,7 @@ const AutoDScalar tanh (const AutoDScalar &a) {
     return tmp;
 }
 
-#if defined(ATRIG_ERF)
+
 const AutoDScalar asinh (const AutoDScalar &a) {
     AutoDScalar tmp;
     tmp.val=::asinh(a.val);
@@ -586,7 +595,7 @@ const AutoDScalar atanh (const AutoDScalar &a) {
     tmp.adval[_i]=a.adval[_i]/tmp2;
     return tmp;
 }
-#endif
+
 
 const AutoDScalar fabs (const AutoDScalar &a) {
     AutoDScalar tmp;
@@ -777,7 +786,7 @@ PetscScalar frexp (const AutoDScalar &a, int* v) {
     return ::frexp(a.val, v);
 }
 
-#if defined(ATRIG_ERF)
+
 const AutoDScalar erf (const AutoDScalar &a) {
     AutoDScalar tmp;
     tmp.val=::erf(a.val);
@@ -786,7 +795,7 @@ const AutoDScalar erf (const AutoDScalar &a) {
     tmp.adval[_i]=tmp2*a.adval[_i];
     return tmp;
 }
-#endif
+
 
 
 /*******************  nontemporary results  *********************************/
@@ -963,12 +972,12 @@ void AutoDScalar::setADValue(const unsigned int p, const PetscScalar v) {
 #  endif
 
 /*******************  i/o operations  ***************************************/
-ostream& operator << ( ostream& out, const AutoDScalar& a) {
+std::ostream& operator << ( std::ostream& out, const AutoDScalar& a) {
     out << "Value: " << a.val;
 #if !defined(NUMBER_DIRECTIONS)
     out << " ADValue: ";
 #else
-out << " ADValues (" << AutoDScalar::numdir << "): ";
+    out << " ADValues (" << AutoDScalar::numdir << "): ";
 #endif
     for (unsigned int _i=0; _i<AutoDScalar::numdir; ++_i)
     out << a.adval[_i] << " ";
@@ -976,7 +985,7 @@ out << " ADValues (" << AutoDScalar::numdir << "): ";
     return out;
 }
 
-istream& operator >> ( istream& in, AutoDScalar& a) {
+std::istream& operator >> ( std::istream& in, AutoDScalar& a) {
     char c;
     do {
         in >> c;
@@ -986,16 +995,16 @@ istream& operator >> ( istream& in, AutoDScalar& a) {
     do in >> c;
     while (c!=':' && !in.eof());
 #else
-unsigned int num;
-do in >> c;
-while (c!='(' && !in.eof());
-in >> num;
-if (num>NUMBER_DIRECTIONS) {
-    cout << "ADOL-C error: to many directions in input\n";
-    exit(-1);
-}
-do in >> c;
-while (c!=')' && !in.eof());
+    unsigned int num;
+    do in >> c;
+    while (c!='(' && !in.eof());
+    in >> num;
+    if (num>NUMBER_DIRECTIONS) {
+      std::cout << "ADOL-C error: to many directions in input\n";
+      exit(-1);
+    }
+    do in >> c;
+    while (c!=')' && !in.eof());
 #endif
     for (unsigned int _i=0; _i<AutoDScalar::numdir; ++_i)
     in >> a.adval[_i];
@@ -1003,6 +1012,7 @@ while (c!=')' && !in.eof());
     while (c!=')' && !in.eof());
     return in;
 }
-}; 
+
+} 
 
 #endif

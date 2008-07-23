@@ -18,8 +18,11 @@ SEGMENT   Label=Probe   Direction=Vertical X=0.5  Y.top=-0.1 Y.bottom=-2
 # Specify impurity profiles
 PROFILE   Type=Uniform Ion=Donor     N.PEAK=1E15  X.MIN=0.0 X.MAX=3.0  \
           Y.TOP=0.0 Y.BOTTOM=-3.0
+PROFILE   Type=Gauss   Ion=Donor  N.PEAK=1E16  X.MIN=0.0 X.MAX=3.0  \
+	  Y.min=-3.0 Y.max=-3.0  Y.CHAR=0.2  
 PROFILE   Type=Gauss   Ion=Acceptor  N.PEAK=1E18  X.MIN=0.0 X.MAX=1.0  \
           Y.TOP=0.0 Y.BOTTOM=0.0 X.CHAR=0.2  Y.JUNCTION=-0.5
+
 
 #------------------------------------------------------------------------------
 set Carrier     = pn        # specify carrier type
@@ -48,7 +51,7 @@ PLOT     Variable=Mesh
 
 SOLVE    Type=EQUILIBRIUM  #compute equilibrium state again on the refined mesh
 # plot simulation variables
-PLOT     PS.OUT=a.ps Variable=Na Resolution=RES.High    AzAngle=40  ElAngle=40  Style=Color
+PLOT     Variable=Na Resolution=RES.High    AzAngle=40  ElAngle=40  Style=Color
 PLOT     Variable=Nd Resolution=RES.High    AzAngle=40  ElAngle=40  Style=Color
 PLOT     Variable=ElecDensity Resolution=RES.High  Measure=SignedLog  AzAngle=40  ElAngle=40
 PLOT     Variable=HoleDensity Resolution=RES.High  Measure=SignedLog  AzAngle=40  ElAngle=40

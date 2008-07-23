@@ -66,6 +66,8 @@ public:
   }
 };
 
+
+
 /* ----------------------------------------------------------------------------
  * PMIS_Server, the base class of PMIS
  */
@@ -103,9 +105,9 @@ public:
      return mole_y;
   }
   // aux function return doping Na
-  PetscScalar ReadDopingNa () const                             { return (*ppsemi_data)->Na; }
+  PetscScalar ReadDopingNa () const                             { return (*ppsemi_data)->Total_Na(); }
   // aux function return doping Nd
-  PetscScalar ReadDopingNd () const                             { return (*ppsemi_data)->Nd; }
+  PetscScalar ReadDopingNd () const                             { return (*ppsemi_data)->Total_Nd(); }
 
 public:
   PMIS_Server(const PMIS_Environment &env)

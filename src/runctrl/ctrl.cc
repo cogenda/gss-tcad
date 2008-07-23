@@ -217,8 +217,7 @@ int SolveControl::do_export()
         ElZone *pzonedata = dynamic_cast< ElZone * >(zonedata[z]);
         pzonedata->export_solution(export_define.CoreFile,"solution",bc,&scale_unit);
       }
-    sprintf(log_buf,"done\n");GSS_LOG();
-
+       sprintf(log_buf,"done\n");GSS_LOG();
   }
 
   if(export_define.ascii)
@@ -234,7 +233,31 @@ int SolveControl::do_export()
     vtk_output_file(export_define.VTKFile);
     sprintf(log_buf,"done\n");GSS_LOG();
   }
-
+  
+  if(export_define.acceptor)
+  {
+    /* remove old file if exist*/
+    remove(export_define.AcceptorFile);
+    for(int z=0;z<zone_num;z++)
+      if(zonedata[z]->material_type==Semiconductor)
+      {
+        SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[z]);
+        pzonedata->export_accptor_ascii(export_define.AcceptorFile,&scale_unit);
+      }
+  }
+  
+  if(export_define.donor)
+  {
+    /* remove old file if exist*/
+    remove(export_define.DonorFile);
+    for(int z=0;z<zone_num;z++)
+      if(zonedata[z]->material_type==Semiconductor)
+      {
+        SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[z]);
+        pzonedata->export_donor_ascii(export_define.DonorFile,&scale_unit);
+      }
+  }
+  
   return 0;
 }
 
@@ -308,6 +331,7 @@ int  SolveControl::do_import()
   return 0;
 
 }
+
 
 int  SolveControl::do_attach()
 {
@@ -668,8 +692,10 @@ int  SolveControl::set_export(list<Cmd>::iterator  pcmd)
   export_define.core  = false;
   export_define.ascii = false;
   export_define.vtk   = false;
+  export_define.acceptor = false;
+  export_define.donor    = false;
 
-  if(!pcmd->allowed_args(3,"corefile","ascfile","vtkfile"))
+  if(!pcmd->allowed_args(5,"corefile","ascfile","vtkfile","acceptorfile","donorfile"))
   {
     sprintf(log_buf,"line %d EXPORT: unrecognized parameter(s)!\n",pcmd->get_current_lineno());
     GSS_LOG();
@@ -692,6 +718,18 @@ int  SolveControl::set_export(list<Cmd>::iterator  pcmd)
   {
     export_define.vtk = true;
     strcpy(export_define.VTKFile,pcmd->get_string("vtkfile",0,""));
+  }
+  
+  if(pcmd->is_arg_exist("acceptorfile"))
+  {
+    export_define.acceptor = true;
+    strcpy(export_define.AcceptorFile,pcmd->get_string("acceptorfile",0,""));
+  }
+  
+  if(pcmd->is_arg_exist("donorfile"))
+  {
+    export_define.donor = true;
+    strcpy(export_define.DonorFile,pcmd->get_string("donorfile",0,""));
   }
   return 0;
 }
@@ -864,8 +902,13 @@ int  SolveControl::set_plot(list<Cmd>::iterator  pcmd)
     plot_define.VariableName=pcmd->get_string("variable",0,"");
     if (pcmd->is_arg_value("variable", "Potential"))          plot_define.Variable = Potential;
     else if (pcmd->is_arg_value("variable", "Doping"))        plot_define.Variable = Doping;
+    else if (pcmd->is_arg_value("variable", "NetDoping"))     plot_define.Variable = NetDoping;
     else if (pcmd->is_arg_value("variable", "Na"))            plot_define.Variable = DopingNa;
     else if (pcmd->is_arg_value("variable", "Nd"))            plot_define.Variable = DopingNd;
+    else if (pcmd->is_arg_value("variable", "Phosphorus"))    plot_define.Variable = Phosphorus;
+    else if (pcmd->is_arg_value("variable", "Arsenic"))       plot_define.Variable = Arsenic;
+    else if (pcmd->is_arg_value("variable", "Antimony"))      plot_define.Variable = Antimony;
+    else if (pcmd->is_arg_value("variable", "Boron"))         plot_define.Variable = Boron;
     else if (pcmd->is_arg_value("variable", "ElecDensity"))   plot_define.Variable = ElecDensity;
     else if (pcmd->is_arg_value("variable", "HoleDensity"))   plot_define.Variable = HoleDensity;
     else if (pcmd->is_arg_value("variable", "ElecTemp"))      plot_define.Variable = ElecTemp;
@@ -969,8 +1012,13 @@ int  SolveControl::set_vtk_plot(list<Cmd>::iterator  pcmd)
     plot_define.VariableName=pcmd->get_string("variable",0,"");
     if (pcmd->is_arg_value("variable", "Potential"))          plot_define.Variable = Potential;
     else if (pcmd->is_arg_value("variable", "Doping"))        plot_define.Variable = Doping;
+    else if (pcmd->is_arg_value("variable", "NetDoping"))     plot_define.Variable = NetDoping;
     else if (pcmd->is_arg_value("variable", "Na"))            plot_define.Variable = DopingNa;
     else if (pcmd->is_arg_value("variable", "Nd"))            plot_define.Variable = DopingNd;
+    else if (pcmd->is_arg_value("variable", "Phosphorus"))    plot_define.Variable = Phosphorus;
+    else if (pcmd->is_arg_value("variable", "Arsenic"))       plot_define.Variable = Arsenic;
+    else if (pcmd->is_arg_value("variable", "Antimony"))      plot_define.Variable = Antimony;
+    else if (pcmd->is_arg_value("variable", "Boron"))         plot_define.Variable = Boron;
     else if (pcmd->is_arg_value("variable", "ElecDensity"))   plot_define.Variable = ElecDensity;
     else if (pcmd->is_arg_value("variable", "HoleDensity"))   plot_define.Variable = HoleDensity;
     else if (pcmd->is_arg_value("variable", "ElecTemp"))      plot_define.Variable = ElecTemp;
@@ -1030,8 +1078,13 @@ int  SolveControl::set_probe(list<Cmd>::iterator pcmd)
   probe.VariableName = pcmd->get_string("variable",0,"");
   if (pcmd->is_arg_value("variable", "Potential"))          probe.Variable = Potential;
   else if (pcmd->is_arg_value("variable", "Doping"))        probe.Variable = Doping;
+  else if (pcmd->is_arg_value("variable", "NetDoping"))     probe.Variable = NetDoping;
   else if (pcmd->is_arg_value("variable", "Na"))            probe.Variable = DopingNa;
   else if (pcmd->is_arg_value("variable", "Nd"))            probe.Variable = DopingNd;
+  else if (pcmd->is_arg_value("variable", "Phosphorus"))    probe.Variable = Phosphorus;
+  else if (pcmd->is_arg_value("variable", "Arsenic"))       probe.Variable = Arsenic;
+  else if (pcmd->is_arg_value("variable", "Antimony"))      probe.Variable = Antimony;
+  else if (pcmd->is_arg_value("variable", "Boron"))         probe.Variable = Boron;
   else if (pcmd->is_arg_value("variable", "ElecDensity"))   probe.Variable = ElecDensity;
   else if (pcmd->is_arg_value("variable", "HoleDensity"))   probe.Variable = HoleDensity;
   else if (pcmd->is_arg_value("variable", "ElecTemp"))      probe.Variable = ElecTemp;

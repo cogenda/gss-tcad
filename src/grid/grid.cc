@@ -117,7 +117,7 @@ int set_xmesh(list<Cmd>::iterator pcmd, skeleton_line & skeleton_line_x)
   if(ratio==1.0)
     dx = width/nspaces;
   else
-    dx = width*(ratio-1)/(pow(ratio,nspaces)-1);
+    dx = width*(ratio-1)/(std::pow(ratio,nspaces)-1);
 
   for(int i=1;i<=nspaces;i++)
   {
@@ -221,7 +221,7 @@ int set_ymesh(list<Cmd>::iterator pcmd, skeleton_line & skeleton_line_y)
   if(ratio==1.0)
     dy = depth/nspaces;
   else
-    dy = depth*(ratio-1)/(pow(ratio,nspaces)-1);
+    dy = depth*(ratio-1)/(std::pow(ratio,nspaces)-1);
 
   for(int i=1;i<=nspaces;i++)
   {

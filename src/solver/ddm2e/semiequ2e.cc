@@ -1361,7 +1361,7 @@ void SMCZone::F2E_ddm_inner(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &OD
   PetscScalar pi = x[zofs[zone_index]+4*i+2];     //hole density of node i
   PetscScalar Ti = x[zofs[zone_index]+4*i+3];      //lattice temperature of node i
 
-  f[zofs[zone_index]+4*i+0] = f[zofs[zone_index]+4*i+0]/pcell->area + e/aux[i].eps*((pi-aux[i].Na)+(aux[i].Nd-ni));
+  f[zofs[zone_index]+4*i+0] = f[zofs[zone_index]+4*i+0]/pcell->area + e/aux[i].eps*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+4*i+1] = f[zofs[zone_index]+4*i+1]/pcell->area;
   f[zofs[zone_index]+4*i+2] = f[zofs[zone_index]+4*i+2]/pcell->area;
   f[zofs[zone_index]+4*i+3] = f[zofs[zone_index]+4*i+3]/pcell->area;
@@ -1416,7 +1416,7 @@ void SMCZone::F2E_ddm_neumannbc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula
     }
   }
 
-  f[zofs[zone_index]+4*i+0] = f[zofs[zone_index]+4*i+0]/pcell->area + e/aux[i].eps*((pi-aux[i].Na)+(aux[i].Nd-ni));
+  f[zofs[zone_index]+4*i+0] = f[zofs[zone_index]+4*i+0]/pcell->area + e/aux[i].eps*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+4*i+1] = f[zofs[zone_index]+4*i+1]/pcell->area;
   f[zofs[zone_index]+4*i+2] = f[zofs[zone_index]+4*i+2]/pcell->area;
   f[zofs[zone_index]+4*i+3] = (f[zofs[zone_index]+4*i+3]+grad_T)/pcell->area;
@@ -1456,8 +1456,8 @@ void SMCZone::F2E_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_Form
   int size = pzone->davcell.size();
   PetscScalar e  =  mt->e;
   PetscScalar kb = mt->kb;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar Vi = x[zofs[z]+4*i+0];     //potential of node i
   PetscScalar ni = x[zofs[z]+4*i+1];     //electron density of node i
   PetscScalar pi = x[zofs[z]+4*i+2];     //hole density of node i
@@ -1486,7 +1486,7 @@ void SMCZone::F2E_ddm_ombc_segment(int i,PetscScalar *x,PetscScalar *f, ODE_Form
     PetscScalar phip = x[zofs[zone_index]+equ_num*size+om_equ];
     PetscScalar etan = (-e*phin-Ec)/kb/fs[i].T;
     PetscScalar etap = (Ev+e*phip)/kb/fs[i].T;
-    f[zofs[z]+4*i+0] = Nc*fermi_half(etan) - Nv*fermi_half(etap)+ Na - Nd;
+    f[zofs[z]+4*i+0] = Nc*fermi_half(etan) - Nv*fermi_half(etap) + Na - Nd;
     f[zofs[z]+4*i+1] = ni - Nc*fermi_half(etan);
     f[zofs[z]+4*i+2] = pi - Nv*fermi_half(etap);
   }
@@ -1557,8 +1557,8 @@ void SMCZone::F2E_ddm_ombc_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   int size = pzone->davcell.size();
   PetscScalar e  =  mt->e;
   PetscScalar kb = mt->kb;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar Vi = x[zofs[z]+4*i+0];     //potential of node i
   PetscScalar ni = x[zofs[z]+4*i+1];     //electron density of node i
   PetscScalar pi = x[zofs[z]+4*i+2];     //hole density of node i
@@ -1849,7 +1849,7 @@ void SMCZone::F2E_ddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   }
 
   f[zofs[zone_index]+4*i+0] = (f[zofs[zone_index]+4*i+0]+grad_P)/pcell->area
-                              + e/aux[i].eps*((pi-aux[i].Na)+(aux[i].Nd-ni));
+                              + e/aux[i].eps*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+4*i+1] = f[zofs[zone_index]+4*i+1]/pcell->area;
   f[zofs[zone_index]+4*i+2] = f[zofs[zone_index]+4*i+2]/pcell->area;
   f[zofs[zone_index]+4*i+3] = (f[zofs[zone_index]+4*i+3]+grad_T)/pcell->area;
@@ -1913,7 +1913,7 @@ void SMCZone::F2E_ddm_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Formula
     grad_T += kapa*ncell->elen[j]/ncell->ilen[j]*(Tj_n-Ti);
   }
 
-  f[zofs[zone_index]+4*i+0] = grad_P + e*((pi-aux[i].Na)+(aux[i].Nd-ni))*pcell->area + pbc->QF*L;
+  f[zofs[zone_index]+4*i+0] = grad_P + e*((pi-ni)+aux[i].Net_doping())*pcell->area + pbc->QF*L;
   f[zofs[zone_index]+4*i+1] = f[zofs[zone_index]+4*i+1]/pcell->area;
   f[zofs[zone_index]+4*i+2] = f[zofs[zone_index]+4*i+2]/pcell->area;
   f[zofs[zone_index]+4*i+3] = (f[zofs[zone_index]+4*i+3]+grad_T);
@@ -1970,8 +1970,8 @@ void SMCZone::F2E_ddm_homojunction(int i,PetscScalar *x,PetscScalar *f, ODE_Form
 
   //process half cell in local zone
   mt->mapping(&pzone->danode[i],&aux[i],ODE_F.clock);
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar grad_P=0,grad_T=0;
   PetscScalar Fn=0,Fp=0;
 
@@ -2045,8 +2045,8 @@ void SMCZone::F2E_ddm_heterojunction(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   PetscScalar nd = x[zofs[pz->pzone->zone_index]+4*n+1];
   PetscScalar pd = x[zofs[pz->pzone->zone_index]+4*n+2];
 
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   mt->mapping(&pzone->danode[i],&aux[i],ODE_F.clock);
   PetscScalar Eci = -e*(Vi + aux[i].affinity + kb*fs[i].T/e*(log(aux[i].Nc)-1.5*log(fs[i].T)));
   PetscScalar Evi = -e*(Vi + aux[i].affinity - kb*fs[i].T/e*(log(aux[i].Nv)-1.5*log(fs[i].T)) + aux[i].Eg/e);
@@ -2109,7 +2109,7 @@ void SMCZone::F2E_ddm_heterojunction(int i,PetscScalar *x,PetscScalar *f, ODE_Fo
   if(pzone->zone_index < pz->pzone->zone_index)
   {
     f[zofs[zone_index]+4*i+0] =  grad_P + e*(pi-ni+Nd-Na)*pcell->area
-                                 + e*(pd-nd+pz->aux[n].Nd-pz->aux[n].Na)*ncell->area
+                                 + e*(pd-nd+pz->aux[n].Net_doping())*ncell->area
                                  + pbc->QF*L;
     f[zofs[zone_index]+4*i+3] =  f[zofs[zone_index]+4*i+3] + f[zofs[pz->zone_index]+4*n+3];
   }

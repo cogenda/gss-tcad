@@ -33,8 +33,8 @@ void SMCZone::F1E_mix_ddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula 
   int z = zone_index;
   PetscScalar e  =  mt->e;
   PetscScalar kb =  mt->kb;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   mt->mapping(&pzone->danode[i],&aux[i],ODE_F.clock);
   PetscScalar Vi = x[zofs[zone_index]+3*i+0];     //potential of node i
   PetscScalar ni = x[zofs[zone_index]+3*i+1];     //electron density of node i
@@ -149,7 +149,7 @@ void SMCZone::F1E_mix_ddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, OD
     }
   }
   f[zofs[zone_index]+3*i+0] = (f[zofs[zone_index]+3*i+0]+grad_P)/pcell->area
-                              + mt->e*((pi-aux[i].Na)+(aux[i].Nd-ni));
+                              + mt->e*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+3*i+1] = f[zofs[zone_index]+3*i+1]/pcell->area;
   f[zofs[zone_index]+3*i+2] = f[zofs[zone_index]+3*i+2]/pcell->area;
 
@@ -211,10 +211,6 @@ void SMCZone::J1E_mix_ddm_ombc(int i,PetscScalar *x,Mat *jac,Mat *jtmp,ODE_Formu
     A[7] = 0;
     A[8] = 1;
     MatSetValues(*jac,3,index,3,index,A,INSERT_VALUES);
-
-    //f[zofs[z]+3*i+0] = Nc*fermi_half(etan) - Nv*fermi_half(etap)+ Na - Nd;
-    //f[zofs[z]+3*i+1] = ni - Nc*fermi_half(etan);
-    //f[zofs[z]+3*i+2] = pi - Nv*fermi_half(etap);
   }
   else
   {

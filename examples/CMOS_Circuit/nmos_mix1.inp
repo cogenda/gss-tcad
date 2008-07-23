@@ -23,7 +23,7 @@ CONTACT  Type = OhmicContact       ID=NDrain  Res=0 Cap=0 Ind=0
 
 #------------------------------------------------------------------------------
 # specify physical model, use Lucent mobility here.
-PMIS region=Si mobility=Lucent
+PMIS region=NSilicon mobility=Lucent
 
 #------------------------------------------------------------------------------
 # IMPORT NMOS MODEL

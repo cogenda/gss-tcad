@@ -850,7 +850,7 @@ void SMCZone::F1Q_qddm_inner(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &O
   PetscScalar Eqc = x[zofs[zone_index]+5*i+3];
   PetscScalar Eqv = x[zofs[zone_index]+5*i+4];
    
-  f[zofs[zone_index]+5*i+0] = f[zofs[zone_index]+5*i+0]/pcell->area + mt->e*((pi-aux[i].Na)+(aux[i].Nd-ni));
+  f[zofs[zone_index]+5*i+0] = f[zofs[zone_index]+5*i+0]/pcell->area + mt->e*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+5*i+1] = f[zofs[zone_index]+5*i+1]/pcell->area;
   f[zofs[zone_index]+5*i+2] = f[zofs[zone_index]+5*i+2]/pcell->area;
   f[zofs[zone_index]+5*i+3] = f[zofs[zone_index]+5*i+3]/pcell->area + (Eqc+Vi+aux[i].affinity);
@@ -884,8 +884,8 @@ void SMCZone::F1Q_qddm_ombc(int i,PetscScalar *x,PetscScalar *f, ODE_Formula &OD
   int size = pzone->davcell.size();
   PetscScalar e  =  mt->e;
   PetscScalar hbar =  mt->hbar;
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar Vi  = x[zofs[zone_index]+5*i+0];     //potential of node i
   PetscScalar Eqc = x[zofs[zone_index]+5*i+3];
   PetscScalar Eqv = x[zofs[zone_index]+5*i+4];
@@ -1017,7 +1017,7 @@ void SMCZone::F1Q_qddm_insulator_gate(int i,PetscScalar *x,PetscScalar *f, ODE_F
   }
   
   f[zofs[zone_index]+5*i+0] = (f[zofs[zone_index]+5*i+0]+grad_P)/pcell->area
-                              + mt->e*((pi-aux[i].Na)+(aux[i].Nd-ni));
+                              + mt->e*((pi-ni)+aux[i].Net_doping());
   f[zofs[zone_index]+5*i+1] = f[zofs[zone_index]+5*i+1]/pcell->area;
   f[zofs[zone_index]+5*i+2] = f[zofs[zone_index]+5*i+2]/pcell->area;
   f[zofs[zone_index]+5*i+3] = (f[zofs[zone_index]+5*i+3]+QNFactor*grad_qpn)/pcell->area + (Eqc+Vi+aux[i].affinity);
@@ -1058,8 +1058,8 @@ void SMCZone::F1Q_qddm_interface(int i,PetscScalar *x,PetscScalar *f, ODE_Formul
   PetscScalar pi = x[zofs[zone_index]+5*i+2];     //hole density of node i
   PetscScalar Eqc = x[zofs[zone_index]+5*i+3];
   PetscScalar Eqv = x[zofs[zone_index]+5*i+4];
-  PetscScalar Na = aux[i].Na;
-  PetscScalar Nd = aux[i].Nd;
+  PetscScalar Na = aux[i].Total_Na();
+  PetscScalar Nd = aux[i].Total_Nd();
   PetscScalar L = 0.5*(pcell->ilen[0]+pcell->ilen[pcell->nb_num-1]);
   
   PetscScalar grad_P = 0, grad_qpn=0, grad_qpp=0;

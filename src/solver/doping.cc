@@ -174,6 +174,41 @@ void SetDopingErf(list<Cmd>::iterator  pcmd, PhysicalUnitScale *scale, vector<Do
   gss_log.record();
 }
 
+
+void SetDopingFile(list<Cmd>::iterator  pcmd, PhysicalUnitScale *scale, vector<DopingFunc *> & doping_func_array)
+{
+  double ion  = 0;
+  int logz=1;
+  
+  if(pcmd->is_arg_exist("ion"))
+  {
+      if(pcmd->is_arg_value("ion","Donor"))
+        ion = DONOR;
+      else if(pcmd->is_arg_value("ion","Acceptor"))
+        ion = ACCEPTOR;
+      else
+        throw PROFILE_ION_TYPE;
+  }
+  else
+      throw PROFILE_ION_TYPE;
+  char *filename=pcmd->get_string("in.file",0,"");
+  char *parameter=pcmd->get_string("arg",0,"");
+  double xoffset = pcmd->get_number("x.offset",0,0.0)*scale->s_micron;
+  double yoffset = pcmd->get_number("y.offset",0,0.0)*scale->s_micron;
+  int invY=pcmd->get_bool("inv.y",0,false);
+  if(pcmd->is_arg_exist("measure"))
+  {
+    if (pcmd->is_arg_value("measure", "Linear"))              logz = 0;
+    else if (pcmd->is_arg_value("measure", "SignedLog"))      logz = 1;
+    else throw PROFILE_UNKNOW_PARAMETER;
+  }
+  DopingFunc * df = new FieldDopingFunc(filename, parameter, invY, logz, xoffset, yoffset, scale->s_micron, ion);
+  doping_func_array.push_back(df);
+  gss_log.string_buf()<<"\nDoping Read From File : "<<filename<<"\n";
+  gss_log.record();
+}
+
+
 int BSolver::init_doping_func()
 {
   double xmin=0,xmax=0,ymin=0,ymax=0;
@@ -195,6 +230,8 @@ int BSolver::init_doping_func()
 		SetDopingGauss(pcmd,&scale_unit,doping_func);
              else if(pcmd->is_arg_value("type","ErrorFunc"))
                 SetDopingErf(pcmd,&scale_unit,doping_func);
+	     else if(pcmd->is_arg_value("type","FromFile"))
+                SetDopingFile(pcmd,&scale_unit,doping_func);
 	     else
 	     {
 	       gss_log.string_buf()<<"line "<<pcmd->get_current_lineno()<<" PROFILE: no such doping Type!\n";

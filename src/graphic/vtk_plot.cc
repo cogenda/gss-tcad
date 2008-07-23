@@ -182,7 +182,7 @@ int BSolver::vtk_output_file(char *filename)
     if(zonedata[zone_index]->material_type == Semiconductor)
     {
       SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
-      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].Nd*pow(scale_unit.s_centimeter,3)));
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].Total_Nd()*pow(scale_unit.s_centimeter,3)));
     }
     else
       fprintf(fp,"%e\n",0.0);
@@ -197,13 +197,72 @@ int BSolver::vtk_output_file(char *filename)
     if(zonedata[zone_index]->material_type == Semiconductor)
     {
       SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
-      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].Na*pow(scale_unit.s_centimeter,3)));
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].Total_Na()*pow(scale_unit.s_centimeter,3)));
     }
     else
       fprintf(fp,"%e\n",0.0);
   }
 
+  fprintf(fp,"SCALARS Phosphorus double 1\n");
+  fprintf(fp,"LOOKUP_TABLE default\n");
+  for(int i=0;i<gnode.size();i++)
+  {
+    int zone_index = gnode[i].zone_index;
+    int local_index = gnode[i].local_index;
+    if(zonedata[zone_index]->material_type == Semiconductor)
+    {
+      SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].P*pow(scale_unit.s_centimeter,3)));
+    }
+    else
+      fprintf(fp,"%e\n",0.0);
+  }
 
+  fprintf(fp,"SCALARS Arsenic double 1\n");
+  fprintf(fp,"LOOKUP_TABLE default\n");
+  for(int i=0;i<gnode.size();i++)
+  {
+    int zone_index = gnode[i].zone_index;
+    int local_index = gnode[i].local_index;
+    if(zonedata[zone_index]->material_type == Semiconductor)
+    {
+      SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].As*pow(scale_unit.s_centimeter,3)));
+    }
+    else
+      fprintf(fp,"%e\n",0.0);
+  }
+  
+  fprintf(fp,"SCALARS Antimony double 1\n");
+  fprintf(fp,"LOOKUP_TABLE default\n");
+  for(int i=0;i<gnode.size();i++)
+  {
+    int zone_index = gnode[i].zone_index;
+    int local_index = gnode[i].local_index;
+    if(zonedata[zone_index]->material_type == Semiconductor)
+    {
+      SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].Sb*pow(scale_unit.s_centimeter,3)));
+    }
+    else
+      fprintf(fp,"%e\n",0.0);
+  }
+
+  fprintf(fp,"SCALARS Boron double 1\n");
+  fprintf(fp,"LOOKUP_TABLE default\n");
+  for(int i=0;i<gnode.size();i++)
+  {
+    int zone_index = gnode[i].zone_index;
+    int local_index = gnode[i].local_index;
+    if(zonedata[zone_index]->material_type == Semiconductor)
+    {
+      SMCZone *pzonedata = dynamic_cast< SMCZone * >(zonedata[zone_index]);
+      fprintf(fp,"%e\n",double(pzonedata->aux[local_index].B*pow(scale_unit.s_centimeter,3)));
+    }
+    else
+      fprintf(fp,"%e\n",0.0);
+  }
+  
   fprintf(fp,"SCALARS Temperature double 1\n");
   fprintf(fp,"LOOKUP_TABLE default\n");
   for(int i=0;i<gnode.size();i++)
