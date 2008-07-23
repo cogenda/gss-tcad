@@ -34,10 +34,9 @@ X11INCS = @X11INCS@
 X11LIBS = @X11LIBS@
 
 #CSA library
-CSAINC = -I$(GSS_DIR)/src/utils/csa
 CSALIB = -L$(GSS_DIR)/src/utils/csa/ -lcsa
 
-INCLUDE   =  -I$(GSS_DIR) -I$(GSS_DIR)/src/include  $(CGNSINC) $(X11INCS) $(CSAINC) $(CPPFLAGS)
+INCLUDE   =  -I$(GSS_DIR) -I$(GSS_DIR)/src/include  $(CGNSINC) $(X11INCS) $(CPPFLAGS)
 CLIBS     =  @LIBS@ $(LEXLIB) $(CGNSLIB) $(X11LIBS) $(CSALIB) $(LDFLAGS)
 
 
